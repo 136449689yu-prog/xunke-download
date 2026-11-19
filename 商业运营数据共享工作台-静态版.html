@@ -29,7 +29,7 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
 .btn.ghost{background:rgba(0,0,0,.05);color:var(--ink)}
 header.hero{padding:44px 0 26px}
 .eyebrow{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--blue);text-transform:uppercase;margin-bottom:10px}
-h1{margin:0;font-size:38px;line-height:1.12;letter-spacing:-.03em;font-weight:700}
+h1{margin:0;font-size:34px;line-height:1.15;letter-spacing:-.02em;font-weight:500}
 .sub{margin:12px 0 0;color:var(--sub);font-size:17px;max-width:700px}
 .srcbar{margin-top:20px;display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:12px;color:var(--sub)}
 .srcbar b{color:var(--ink);font-weight:600}
@@ -38,8 +38,9 @@ h1{margin:0;font-size:38px;line-height:1.12;letter-spacing:-.03em;font-weight:70
 .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.03)}
 .kpi{padding:22px}
 .kpi .lbl{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:8px}
+.kpi .ic{width:auto;height:auto;background:none!important;border-radius:0;font-size:13px;color:var(--sub)}
 .kpi .ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
-.kpi .val{font-size:32px;font-weight:700;letter-spacing:-.02em;margin-top:14px;font-variant-numeric:tabular-nums}
+.kpi .val{font-size:30px;font-weight:600;letter-spacing:-.02em;margin-top:12px;font-variant-numeric:tabular-nums}
 .kpi .hint{font-size:12px;color:var(--sub);margin-top:4px}
 .section{margin-bottom:26px}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:0 4px 14px}
@@ -89,17 +90,17 @@ footer{padding:30px 4px 0;font-size:12px;color:var(--sub);text-align:center;line
 
 <div class="wrap">
   <header class="hero">
-    <div class="eyebrow">Live Data · 资料库云端共享</div>
-    <h1>一处更新，处处可见</h1>
-    <p class="sub">团队在资料库的三张共享台账里填数据，这个工作台打开就是最新的。表格一有变动，页面自动刷新——不用再来回传文件。</p>
+    <div class="eyebrow">资料库云端共享</div>
+    <h1>团队改表，页面同步</h1>
+    <p class="sub">商户流水、欠费催收、经营数据三张台账放在 WorkBuddy 资料库里。团队在表里填数据，打开这个页面就是最新的。</p>
     <div class="srcbar"><span class="dot live"></span>数据来源：<b>WorkBuddy 资料库</b><span>·</span><span id="upd">等待同步</span></div>
   </header>
 
   <div class="grid kpis" id="kpis">
-    <div class="card kpi"><div class="lbl"><span class="ic" style="background:rgba(0,113,227,.12)">▦</span>流水记录</div><div class="val" data-sp-bindable="database" data-sp-database-id="nuytUGGjvi946uMchNzx3N" id="k_flow_n">—</div><div class="hint">商户流水笔数</div></div>
-    <div class="card kpi"><div class="lbl"><span class="ic" style="background:rgba(255,159,10,.15)">◷</span>欠费总额</div><div class="val" data-sp-bindable="database" data-sp-database-id="j8u6A8Msp5hGZNPry2HHOW" id="k_debt_sum">—</div><div class="hint">全部未结欠费</div></div>
-    <div class="card kpi"><div class="lbl"><span class="ic" style="background:rgba(255,59,48,.12)">⚠</span>高风险欠费</div><div class="val" data-sp-bindable="database" data-sp-database-id="j8u6A8Msp5hGZNPry2HHOW" id="k_debt_high">—</div><div class="hint">诉讼中 / 账龄&gt;90天</div></div>
-    <div class="card kpi"><div class="lbl"><span class="ic" style="background:rgba(48,209,88,.15)">↗</span>本月完成率</div><div class="val" data-sp-bindable="database" data-sp-database-id="KrN5EoPj90zy40CQyOiGYB" id="k_rate">—</div><div class="hint">实际 ÷ 预算</div></div>
+    <div class="card kpi"><div class="lbl"><span class="ic">流水记录</span></div><div class="val" data-sp-bindable="database" data-sp-database-id="nuytUGGjvi946uMchNzx3N" id="k_flow_n">—</div><div class="hint">商户流水笔数</div></div>
+    <div class="card kpi"><div class="lbl"><span class="ic">欠费总额</span></div><div class="val" data-sp-bindable="database" data-sp-database-id="j8u6A8Msp5hGZNPry2HHOW" id="k_debt_sum">—</div><div class="hint">全部未结欠费</div></div>
+    <div class="card kpi"><div class="lbl"><span class="ic">高风险欠费</span></div><div class="val" data-sp-bindable="database" data-sp-database-id="j8u6A8Msp5hGZNPry2HHOW" id="k_debt_high">—</div><div class="hint">诉讼中 / 账龄&gt;90天</div></div>
+    <div class="card kpi"><div class="lbl"><span class="ic">本月完成率</span></div><div class="val" data-sp-bindable="database" data-sp-database-id="KrN5EoPj90zy40CQyOiGYB" id="k_rate">—</div><div class="hint">实际 ÷ 预算</div></div>
   </div>
 
   <div class="stack">
@@ -210,7 +211,7 @@ footer{padding:30px 4px 0;font-size:12px;color:var(--sub);text-align:center;line
     var by={};for(var j=0;j<rows.length;j++){var k=rows[j]['流水来源']||'其它';by[k]=(by[k]||0)+(Number(rows[j]['金额'])||0);}
     var keys=['POS','银行','现金'],max=0,i2;
     for(i2=0;i2<keys.length;i2++){max=Math.max(max,by[keys[i2]]||0);}
-    var colors={'POS':'var(--blue)','银行':'var(--purple)','现金':'var(--orange)'};
+    var colors={'POS':'var(--blue)','银行':'#8e8e93','现金':'#c7c7cc'};
     var html='',total=0;for(i2=0;i2<keys.length;i2++){total+=(by[keys[i2]]||0);}
     for(i2=0;i2<keys.length;i2++){
       var v=by[keys[i2]]||0,pct=total?Math.round(v/total*100):0,w=max?Math.round(v/max*100):0;
