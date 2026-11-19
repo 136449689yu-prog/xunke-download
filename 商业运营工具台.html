@@ -238,6 +238,19 @@ td{padding:12px}
 .brand .logo{background:#1d1d1f;border-radius:10px;font-weight:600}
 .ai-head .t .spark{background:#1d1d1f;border-radius:8px;font-size:13px}
 .msg.bot .who{color:var(--muted)}
+.ai-set{display:none;padding:16px 20px;border-bottom:.5px solid var(--line);background:rgba(250,250,252,.9)}
+.ai-set.open{display:block}
+.ai-set label{display:block;font-size:12px;color:var(--sub);margin-bottom:6px}
+.ai-set input{width:100%;font:inherit;font-size:13px;padding:9px 11px;border:.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);outline:none;margin-bottom:12px}
+.ai-set input:focus{border-color:var(--blue)}
+.ai-set .tip{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.ai-set .row{display:flex;gap:8px;align-items:center}
+.ai-set .row .btn{flex:1;font-size:12px;padding:7px 10px}
+.model-tag{font-size:11px;color:var(--green);background:rgba(48,209,88,.12);padding:3px 8px;border-radius:6px;margin-left:6px;font-weight:500}
+.msg .err{color:#d70015}
+.gear{margin-left:auto;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:4px;border-radius:8px;line-height:0}
+.gear:hover{background:#f0f0f3;color:var(--ink)}
+.gear svg{width:16px;height:16px}
 .aiview{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
 .aiview iframe{width:100%;height:820px;border:0;display:block;background:#fff}
 @media(max-width:760px){.main{padding:20px 16px 80px}.card{padding:20px 16px;border-radius:16px}.aiview iframe{height:720px}}
@@ -262,8 +275,22 @@ td{padding:12px}
   <!-- 右侧 AI 助理 -->
   <aside class="ai" id="ai">
     <div class="ai-head">
-      <div class="t"><span class="spark"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>运营助理</span></div>
-      <div class="d">回答结合当前页面数据，在本地生成。</div>
+      <div class="t"><span class="spark"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>运营助理</span><span class="model-tag" id="modelTag" style="display:none">GLM-4.5</span>
+        <button class="gear" id="aiGear" title="模型设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9 2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2 2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9 2 2 0 1 1 0 4z"/></svg></button>
+      </div>
+      <div class="d" id="aiMode">本地演示模式 · 回答基于当前页数据</div>
+    </div>
+    <div class="ai-set" id="aiSet">
+      <label for="aiKey">智谱 API Key（只存本机浏览器）</label>
+      <input id="aiKey" type="password" placeholder="粘贴你的 API Key" autocomplete="off">
+      <label for="aiModel">模型</label>
+      <input id="aiModel" value="glm-4.5" placeholder="glm-4.5">
+      <div class="tip">Key 只保存在你这台设备的浏览器里，不会写进网页或上传。留空则使用本地演示回答。</div>
+      <div class="row">
+        <button class="btn primary" id="aiSave">保存</button>
+        <button class="btn" id="aiClear">清除</button>
+        <button class="btn" id="aiClose">收起</button>
+      </div>
     </div>
     <div class="ai-msg" id="aiMsg">
       <div class="msg bot"><div class="who">运营助理</div>左侧选一个工具，我可以解读当前页面的数据。也可以直接问下面的问题。</div>
@@ -1272,7 +1299,7 @@ function go(id){
   const name=PAGES.find(p=>p.id===id).name;
   // 切页不刷屏：只更新助理面板的上下文提示（首次进入已有一条欢迎语）
   $('#ai').dataset.page=name;
-  const d=$('#ai .d');if(d)d.textContent='当前页面：'+name+' · 问我任何关于这页的数据问题';
+  if(typeof updateAIMode==='function')updateAIMode();
 }
 function $(s){return document.querySelector(s);}
 function toggleSide(){$('#side').classList.toggle('open');$('#overlay').classList.toggle('show');}
@@ -1310,16 +1337,90 @@ function answer(q){
   const e=expertOf(CURRENT);
   return (e?'【'+e.name+'】':'【运营助理】')+answerRaw(q);
 }
-function pushBot(t){const w=document.createElement('div');w.className='msg bot';w.innerHTML='<div class="who">运营助理</div>'+esc(t);$('#aiMsg').appendChild(w);$('#aiMsg').scrollTop=$('#aiMsg').scrollHeight;}
+/* ===== GLM-4.5 接入：key 只存本机 localStorage，不写入网页源码 ===== */
+const AI_CFG_KEY='xunke_glm_cfg_v1';
+function aiCfg(){
+  try{return JSON.parse(localStorage.getItem(AI_CFG_KEY)||'{}')||{};}catch(e){return {};}
+}
+function aiSaveCfg(){
+  const key=$('#aiKey').value.trim();
+  const model=$('#aiModel').value.trim()||'glm-4.5';
+  try{
+    if(key)localStorage.setItem(AI_CFG_KEY,JSON.stringify({key:key,model:model}));
+    else localStorage.removeItem(AI_CFG_KEY);
+  }catch(e){}
+  updateAIMode();
+  toastDemo(key?'GLM 已保存，只存在本机':'已清除，恢复本地演示');
+}
+function updateAIMode(){
+  const cfg=aiCfg(),on=!!cfg.key;
+  const tag=$('#modelTag'),mode=$('#aiMode');
+  if(tag)tag.style.display=on?'':'none';
+  if(tag&&on)tag.textContent=cfg.model||'GLM-4.5';
+  if(mode)mode.textContent=on?('已连接 '+(cfg.model||'glm-4.5')+' · 回答结合当前页数据'):'本地演示模式 · 回答基于当前页数据';
+}
+function pageContext(){
+  const d=DEMO[CURRENT]||{},name=PAGES.find(p=>p.id===CURRENT).name;
+  const ex=expertOf(CURRENT);
+  let ctx='你是商业地产运营工作台的助理，用中文简洁回答，基于给定数据，不要编造数字。\n当前页面：'+name;
+  if(ex)ctx+='\n负责专家：'+ex.name+'，职责：'+ex.duty;
+  if(d.topRisk)ctx+='\n最高风险：'+d.topRisk;
+  if(d.summary)ctx+='\n数据概况：'+d.summary;
+  if(d.advice)ctx+='\n建议：'+d.advice;
+  if(CURRENT==='today')ctx+='\n今日待办：'+TODOS.map(x=>x.t+' '+money(x.amt)+'（'+x.lv+'风险）').join('；');
+  return ctx;
+}
+async function askGLM(q){
+  const cfg=aiCfg();
+  if(!cfg.key)return null;
+  const r=await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},
+    body:JSON.stringify({model:cfg.model||'glm-4.5',messages:[
+      {role:'system',content:pageContext()},
+      {role:'user',content:q}
+    ],temperature:0.5,max_tokens:800})
+  });
+  if(!r.ok)throw new Error(r.status===401?'Key 无效或已过期':r.status===429?'请求太频繁，稍后再试':'接口返回 '+r.status);
+  const j=await r.json();
+  return (j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'模型没有返回内容';
+}
+function pushBot(t,isErr){const w=document.createElement('div');w.className='msg bot';w.innerHTML='<div class="who">运营助理</div>'+(isErr?'<span class="err">'+esc(t)+'</span>':esc(t));$('#aiMsg').appendChild(w);$('#aiMsg').scrollTop=$('#aiMsg').scrollHeight;}
+function pushLoading(){const w=document.createElement('div');w.className='msg bot';w.id='aiLoading';w.innerHTML='<div class="who">运营助理</div><span style="color:var(--muted)">正在思考…</span>';$('#aiMsg').appendChild(w);$('#aiMsg').scrollTop=$('#aiMsg').scrollHeight;}
+async function sendQuestion(q){
+  pushMe(q);$('#aiText').value='';
+  if(!aiCfg().key){setTimeout(()=>pushBot(answer(q)),300);return;}
+  pushLoading();
+  try{
+    const t=await askGLM(q);
+    const l=$('#aiLoading');if(l)l.remove();
+    if(t)pushBot(t);
+  }catch(e){
+    const l=$('#aiLoading');if(l)l.remove();
+    pushBot(e.message+'，这次先用本地演示回答。\n'+answer(q),true);
+  }
+}
 function pushMe(t){const w=document.createElement('div');w.className='msg me';w.textContent=t;$('#aiMsg').appendChild(w);$('#aiMsg').scrollTop=$('#aiMsg').scrollHeight;}
 function send(){
   const t=$('#aiText').value.trim();if(!t)return;
-  pushMe(t);$('#aiText').value='';
-  setTimeout(()=>pushBot(answer(t)),350);
+  sendQuestion(t);
 }
 $('#aiSend').onclick=send;
 $('#aiText').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
-$('#quick').querySelectorAll('button').forEach(b=>b.onclick=()=>{pushMe(b.textContent);setTimeout(()=>pushBot(answer(b.textContent)),350);});
+$('#quick').querySelectorAll('button').forEach(b=>b.onclick=()=>sendQuestion(b.textContent));
+$('#aiGear').onclick=()=>{
+  const box=$('#aiSet'),cfg=aiCfg();
+  box.classList.toggle('open');
+  if(box.classList.contains('open')){
+    $('#aiKey').value=cfg.key||'';
+    $('#aiModel').value=cfg.model||'glm-4.5';
+    $('#aiKey').focus();
+  }
+};
+$('#aiSave').onclick=aiSaveCfg;
+$('#aiClear').onclick=()=>{$('#aiKey').value='';aiSaveCfg();};
+$('#aiClose').onclick=()=>$('#aiSet').classList.remove('open');
+updateAIMode();
 $('#mtoggle').onclick=()=>$('#ai').classList.toggle('open');
 $('#overlay').onclick=()=>{$('#side').classList.remove('open');$('#overlay').classList.remove('show');};
 
