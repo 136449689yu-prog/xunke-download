@@ -765,7 +765,7 @@ const EXPERTS=[
   {id:'chief',name:'商业地产 AI 战略专家',role:'团队总负责人',icon:'✦',color:'#1d1d1f',
    duty:'制定 AI 运营战略与实施路径，协调各模块专家，整合成果形成完整交付，对接高层汇报。',
    skills:['AI 赋能战略','实施路线图','跨模块协调','方案整合'],
-   tools:'统筹全部 8 个工具',pages:[]},
+   tools:'统筹全部 8 个工具',pages:['today','report']},
   {id:'ops',name:'营运 AI 专家',role:'催费与核验工具开发专家',icon:'✓',color:'#0071e3',
    duty:'开发商户营业额真实性核验与催费函自动化系统，设计多源比对与异常识别算法，确保准确合规。',
    skills:['多源流水比对','异常识别','催费系统','合规核验'],
@@ -806,7 +806,7 @@ function pageExperts(){return head('团队 / 职责','商业地产 AI 运营专�
   '<p class="ec-duty">'+esc(e.duty)+'</p>'+
   '<div class="ec-skills">'+e.skills.map(s=>'<span>'+esc(s)+'</span>').join('')+'</div>'+
   '<div class="ec-tools">负责工具：'+esc(e.tools)+'</div>'+
-  (e.pages.length?'<div class="ec-links">'+e.pages.map(p=>'<button class="btn" onclick="go(\''+p+'\')">'+esc(PAGES.find(x=>x.id===p).name)+'</button>').join('')+'</div>':'<div class="ec-tools" style="margin-top:10px">统筹全部工具 · 顶层设计</div>')+
+  '<div class="ec-links" style="margin-top:12px">'+e.pages.map(p=>'<button class="btn" onclick="go(\''+p+'\')">'+esc(PAGES.find(x=>x.id===p).name)+'</button>').join('')+'</div>'+
   '</div>').join('')+'</div>'+
 '<div class="card"><p class="sec-label">协作方式</p>'+tableHTML([
   {a:'项目管理',b:'总负责人统筹路线图与里程碑，各专家按模块推进，定期同步进度'},
