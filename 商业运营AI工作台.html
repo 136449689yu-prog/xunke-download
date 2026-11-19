@@ -136,6 +136,8 @@ td.editing{outline:2px solid #0071e3;outline-offset:-2px;background:#f5f9ff}
 .tpledit{width:100%;min-height:430px;box-sizing:border-box;font:inherit;font-size:13px;line-height:1.75;padding:16px 18px;border:.5px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);resize:vertical;white-space:pre-wrap}
 .tpledit:focus{outline:2px solid #0071e3;outline-offset:-1px}
 #tplPreview{white-space:pre-wrap;min-height:430px}
+#ctPreview{white-space:pre-wrap;height:560px;overflow-y:auto}
+#ctLease,#ctJoint{min-height:560px}
 @media(max-width:900px){.tplgrid{grid-template-columns:1fr}.tpledit{min-height:300px}#tplPreview{min-height:auto}}
 .filebtn{position:relative;overflow:hidden;cursor:pointer;display:inline-flex;align-items:center}
 .filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
@@ -439,6 +441,126 @@ function initTpl(){
   $('#tplUrgent').addEventListener('input',onEdit);
   $('#tplNormal').addEventListener('input',onEdit);
   switchTplEditor();
+}
+/* ===== 招商合同：正式商业合同模板（可编辑/变量/保存/下载） ===== */
+const CONTRACT_TPL={
+  lease:'商铺租赁合同\n\n甲方（出租方）：{甲方}\n乙方（承租方）：{乙方}\n\n依据《中华人民共和国民法典》及相关法律法规，甲乙双方在平等、自愿、公平、诚实信用的基础上，就乙方承租甲方商铺事宜，经友好协商订立本合同，共同遵守。\n\n第一条 租赁标的\n1.1 甲方将位于 {铺位} 的商铺（下称“该商铺”）出租给乙方使用，建筑面积约 {面积} 平方米。\n1.2 该商铺仅限乙方用于 {用途} 经营。未经甲方书面同意，乙方不得擅自变更经营用途。\n\n第二条 租赁期限\n2.1 租赁期限自 {期限起} 起至 {期限止} 止，共计 {期限}。\n2.2 免租期共 {免租期} 天，自 {期限起} 起算。免租期内免交租金，但物业管理费、水电费等实际发生费用由乙方承担。\n2.3 乙方如需续租，应于租赁期满前三个月书面提出申请，同等条件下享有优先承租权。\n\n第三条 租金、保证金及支付\n3.1 本合同租金总额为人民币 {金额} 元（大写：{金额大写}）。\n3.2 租金按 {支付周期} 支付，乙方应于每个支付周期开始前五个工作日内付至甲方指定账户。\n3.3 乙方应于签订本合同之日起五个工作日内支付履约保证金人民币 {保证金} 元。租赁期满且乙方结清全部费用、按约交还商铺后，甲方于十五个工作日内无息退还。\n3.4 自第二个租赁年度起，租金每年递增 {递增比例}。\n\n第四条 交付与装修\n4.1 甲方于 {期限起} 前将该商铺按现状交付乙方，双方签署《商铺交接确认书》。\n4.2 乙方装修方案须事先报甲方及物业管理方审核同意，不得破坏主体结构及消防设施。\n4.3 装修费用由乙方承担。合同期满或提前解除时，依附商铺的不可移动装修归甲方所有，甲方不予补偿。\n\n第五条 双方权利义务\n5.1 甲方保证对该商铺享有合法出租权，并协助乙方办理经营所需证照。\n5.2 甲方负责商铺主体结构及公共设施维修，乙方负责商铺内部设施日常维护。\n5.3 乙方应合法经营，遵守物业管理规定，承担经营产生的全部税费及债权债务。\n5.4 未经甲方书面同意，乙方不得转租、分租、转让该商铺或与第三方联营。\n\n第六条 物业管理与安全\n6.1 乙方应按时缴纳物业管理费、水电费、推广费等费用。\n6.2 乙方须遵守消防安全规定，承担因自身原因造成的安全事故责任。\n\n第七条 合同解除与违约责任\n7.1 乙方逾期支付租金或其他费用超过三十日的，甲方有权单方解除合同、收回商铺，并要求乙方支付相当于三个月租金的违约金。\n7.2 乙方擅自改变用途、转租或违法经营的，甲方有权立即解除合同，保证金不予退还。\n7.3 甲方未按约定交付商铺超过三十日的，乙方有权解除合同，甲方双倍返还保证金。\n7.4 违约方给对方造成的损失超过违约金部分，仍应予以赔偿。\n\n第八条 不可抗力\n8.1 因不可抗力致本合同无法履行的，双方互不承担违约责任，受影响方应及时通知对方并提供有效证明。\n\n第九条 保密\n9.1 双方对本合同内容及履约中获知的对方商业秘密负有保密义务，未经书面同意不得向第三方披露。\n\n第十条 争议解决\n10.1 履行本合同发生争议，双方应友好协商；协商不成的，任何一方均可向该商铺所在地人民法院提起诉讼。\n\n第十一条 其他\n11.1 未尽事宜双方可签补充协议，补充协议与本合同具有同等法律效力。\n11.2 本合同一式肆份，甲乙双方各执贰份，自双方签字盖章之日起生效。\n\n甲方（盖章）：{甲方}                乙方（盖章）：{乙方}\n授权代表：                          授权代表：\n签订日期：{日期}                    签订日期：{日期}\n\n（本合同为工作台生成的正式格式文本，签署前请由法务复核。）',
+  joint:'联营合作合同\n\n甲方（场地提供方）：{甲方}\n乙方（经营合作方）：{乙方}\n\n甲乙双方本着平等互利、共同发展的原则，就乙方在甲方场地内开展联营经营事宜，经友好协商订立本合同。\n\n第一条 合作场地与用途\n1.1 甲方提供 {铺位} 场地（建筑面积约 {面积} 平方米）供乙方经营使用。\n1.2 经营用途为 {用途}。未经甲方书面同意，乙方不得变更用途。\n\n第二条 合作期限\n2.1 合作期限自 {期限起} 起至 {期限止} 止，共计 {期限}。\n2.2 合同期满前三个月，双方可协商续约事宜。\n\n第三条 收益分配与结算\n3.1 乙方按当期营业收入的 {分成比例} 向甲方支付联营分成。\n3.2 乙方承诺保底收益为人民币 {金额} 元（大写：{金额大写}）。当期分成低于保底收益的，按保底收益结算。\n3.3 结算周期为 {支付周期}，双方于每个结算周期结束后五个工作日内完成对账，乙方在确认后五个工作日内支付。\n3.4 乙方应向甲方缴纳履约保证金人民币 {保证金} 元，合作期满且结清全部款项后无息退还。\n\n第四条 场地交付与装修\n4.1 甲方于 {期限起} 前交付场地，双方签署交接确认书。\n4.2 乙方装修须经甲方审核同意，不得破坏建筑主体及消防设施。\n4.3 装修费用由乙方承担，合同终止时不可移动装修归甲方所有。\n\n第五条 双方权利义务\n5.1 甲方负责公共区域管理、消防设施维护及整体营销推广。\n5.2 乙方负责经营范围内的商品／服务质量、人员管理及安全生产。\n5.3 乙方须合法经营，独立承担经营产生的债权债务及税费。\n5.4 未经甲方书面同意，乙方不得将场地转交第三方经营。\n\n第六条 违约责任\n6.1 乙方逾期支付分成超过三十日的，甲方有权解除合同并要求支付相当于三个月保底收益的违约金。\n6.2 乙方擅自变更用途或违法经营的，甲方有权立即解除合同，保证金不予退还。\n6.3 甲方未按期交付场地超过三十日的，乙方有权解除合同，甲方双倍返还保证金。\n\n第七条 保密与争议解决\n7.1 双方对本合同内容及商业秘密负有保密义务。\n7.2 发生争议应友好协商；协商不成的，向场地所在地人民法院提起诉讼。\n\n第八条 其他\n8.1 本合同一式肆份，双方各执贰份，自签字盖章之日起生效。\n\n甲方（盖章）：{甲方}                乙方（盖章）：{乙方}\n授权代表：                          授权代表：\n签订日期：{日期}                    签订日期：{日期}\n\n（本合同为工作台生成的正式格式文本，签署前请由法务复核。）'
+};
+const CONTRACT_VARS=['甲方','乙方','铺位','面积','用途','期限起','期限止','期限','免租期','金额','金额大写','保证金','支付周期','递增比例','分成比例','日期'];
+const DIGIT_CN=['零','壹','贰','叁','肆','伍','陆','柒','捌','玖'];
+function digitUppercase(n){
+  n=Number(n)||0;
+  if(!isFinite(n))return '';
+  const cents=Math.round(n*100),int=Math.floor(cents/100),dec=cents%100;
+  if(int===0&&dec===0)return '零元整';
+  const units=['','万','亿','万亿'];
+  const groups=[];let g=int;
+  while(g>0){groups.unshift(g%10000);g=Math.floor(g/10000);}
+  let out='';
+  groups.forEach((grp,i)=>{
+    const U=units[groups.length-1-i]||'';
+    if(grp===0){if(out&&!out.endsWith('零'))out+='零';return;}
+    let gs='',needZero=false;
+    const d=[Math.floor(grp/1000),Math.floor(grp%1000/100),Math.floor(grp%100/10),grp%10];
+    const u2=['仟','佰','拾',''];
+    d.forEach((digit,j)=>{
+      if(digit===0){if(gs)needZero=true;}
+      else{if(needZero){gs+='零';needZero=false;}gs+=DIGIT_CN[digit]+u2[j];}
+    });
+    if(out&&int>=10000&&grp<1000&&!out.endsWith('零'))out+='零';
+    out+=gs+U;
+  });
+  out=out.replace(/零+$/,'')+'元';
+  if(dec===0)out+='整';
+  else{
+    const jiao=Math.floor(dec/10),fen=dec%10;
+    if(jiao)out+=DIGIT_CN[jiao]+'角';else if(fen)out+='零';
+    if(fen)out+=DIGIT_CN[fen]+'分';
+  }
+  return out;
+}
+function getCTpl(){const s=readStore();return {lease:(s.ctpl&&s.ctpl.lease)||CONTRACT_TPL.lease,joint:(s.ctpl&&s.ctpl.joint)||CONTRACT_TPL.joint};}
+function saveCTpl(){
+  const s=readStore();s.ctpl={lease:$('#ctLease').value,joint:$('#ctJoint').value};
+  s.ctForm={merchant:$('#ctMerchant').value,shop:$('#ctShop').value,partyA:$('#ctPartyA').value,
+    amount:$('#ctAmount').value,deposit:$('#ctDeposit').value,start:$('#ctStart').value,
+    end:$('#ctEnd').value,area:$('#ctArea').value,use:$('#ctUse').value};
+  if(writeStore(s))toastDemo('合同模板与信息已保存，刷新不丢');
+}
+function ctVars(){
+  const g=id=>$('#'+id)?$('#'+id).value:'';
+  const amt=Number(g('ctAmount'))||0;
+  return {
+    '甲方':g('ctPartyA')||'________','乙方':g('ctMerchant')||'________',
+    '铺位':g('ctShop')||'________','面积':g('ctArea')||'________',
+    '用途':g('ctUse')||'________','期限起':g('ctStart')||'____年__月__日',
+    '期限止':g('ctEnd')||'____年__月__日','期限':g('ctTerm')||'____',
+    '免租期':g('ctFree')||'30','金额':amt.toLocaleString('zh-CN'),'金额大写':digitUppercase(amt),
+    '保证金':Number(g('ctDeposit')||0).toLocaleString('zh-CN'),
+    '支付周期':g('ctCycle')||'季度','递增比例':g('ctStep')||'5%','分成比例':g('ctShare')||'____%',
+    '日期':new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})
+  };
+}
+function renderContract(tpl){
+  const v=ctVars();
+  return String(tpl).replace(/\{(甲方|乙方|铺位|面积|用途|期限起|期限止|期限|免租期|金额|金额大写|保证金|支付周期|递增比例|分成比例|日期)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+}
+function renderContractPreview(){
+  const k=$('#ctKind').value;
+  const tpl=k==='lease'?$('#ctLease').value:$('#ctJoint').value;
+  $('#ctPreview').innerText=renderContract(tpl);
+  $('#ctAmtUpper').value=digitUppercase(Number($('#ctAmount').value)||0);
+}
+function switchCTpl(){
+  const k=$('#ctKind').value;
+  $('#ctLease').style.display=k==='lease'?'block':'none';
+  $('#ctJoint').style.display=k==='joint'?'block':'none';
+  renderContractPreview();
+}
+function insertCVar(name){
+  const ta=$('#ctKind').value==='lease'?$('#ctLease'):$('#ctJoint');
+  const tok='{'+name+'}',p=ta.selectionStart;
+  ta.value=ta.value.slice(0,p)+tok+ta.value.slice(ta.selectionEnd);
+  ta.focus();ta.selectionStart=ta.selectionEnd=p+tok.length;
+  renderContractPreview();
+}
+function contractText(){return renderContract($('#ctKind').value==='lease'?$('#ctLease').value:$('#ctJoint').value);}
+function downloadContract(){
+  const name=($('#ctKind').value==='lease'?'商铺租赁合同_':'联营合作合同_')+($('#ctMerchant').value||'商户')+'.txt';
+  dl(name,contractText(),'text/plain;charset=utf-8');
+}
+function resetContract(){
+  if(!window.confirm('恢复两套默认合同模板？你改过的条款会被覆盖（填写的商户信息保留）。'))return;
+  $('#ctLease').value=CONTRACT_TPL.lease;$('#ctJoint').value=CONTRACT_TPL.joint;
+  saveCTpl();renderContractPreview();
+}
+function contractAudit(){
+  const v=ctVars(),need=[];
+  if(!$('#ctPartyA').value)need.push('甲方名称未填');
+  if(!$('#ctMerchant').value)need.push('乙方名称未填');
+  if(!$('#ctShop').value)need.push('铺位编号未填');
+  if(!$('#ctAmount').value)need.push('合同金额未填');
+  const txt='合同合规审核清单（'+($('#ctKind').value==='lease'?'商铺租赁合同':'联营合作合同')+'）\n\n'+
+    '乙方：'+v['乙方']+'　铺位：'+v['铺位']+'　金额：'+money($('#ctAmount').value)+'（'+v['金额大写']+'）\n'+
+    '期限：'+v['期限起']+' 至 '+v['期限止']+'\n\n'+
+    (need.length?'待补全：\n'+need.map(x=>'· '+x).join('\n'):'基本信息：通过')+'\n\n'+
+    '条款检查：\n· 租赁标的、面积、用途　√\n· 期限、免租期、续约　√\n· 租金／分成、保证金、递增　√\n· 交付与装修、不可移动装修归属　√\n· 双方权利义务、物业与安全　√\n· 合同解除与违约责任　√\n· 不可抗力、保密、争议解决　√\n· 份数与生效条款　√\n\n'+
+    '提示：本清单基于模板结构自动核对，正式签署前请由法务复核具体条款与金额。';
+  dl('合同合规审核清单_'+($('#ctMerchant').value||'商户')+'.txt',txt);
+}
+function initContract(){
+  const t=getCTpl();
+  $('#ctLease').value=t.lease;$('#ctJoint').value=t.joint;
+  const s=readStore(),f=(s.ctForm)||{};
+  const set=(id,val)=>{const el=$('#'+id);if(el&&val!=null)el.value=val;};
+  set('ctMerchant',f.merchant);set('ctShop',f.shop);set('ctPartyA',f.partyA);
+  set('ctAmount',f.amount);set('ctDeposit',f.deposit);set('ctStart',f.start);
+  set('ctEnd',f.end);set('ctArea',f.area);set('ctUse',f.use);
+  ['ctMerchant','ctShop','ctPartyA','ctAmount','ctDeposit','ctStart','ctEnd','ctArea','ctUse','ctTerm','ctFree','ctCycle','ctStep','ctShare','ctLease','ctJoint'].forEach(id=>{
+    const el=$('#'+id);if(el)el.addEventListener('input',()=>{renderContractPreview();saveCTpl();});
+  });
+  switchCTpl();
 }
 function importCSV(id,input){
   const f=input.files&&input.files[0];if(!f)return;
@@ -769,13 +891,44 @@ function pageLease(){return head('增长与招商 / 招商','招商合同与线�
   {key:'s',label:'匹配分',fmt:(v,r)=>'<div style="display:flex;align-items:center;gap:8px"><div class="bar" style="flex:1"><i style="width:'+v+'%"></i></div><b>'+v+'</b></div>'},
   {key:'r',label:'匹配说明'}
 ])+'</div>'+
-'<div class="card"><p class="sec-label">生成合同</p>'+
-  '<div class="formgrid"><div class="field"><label>商户名称</label><input class="inp" value="某连锁餐饮"></div>'+
-  '<div class="field"><label>铺位编号</label><input class="inp" value="P08"></div>'+
-  '<div class="field"><label>合同模板</label><select class="inp"><option>标准租赁合同</option><option>联营合同</option></select></div>'+
-  '<div class="field"><label>合同金额（元）</label><input class="inp" value="480000"></div></div>'+
-  '<div class="actions"><button class="btn primary" onclick="downloadGenerated(\'contract\')">生成合同并审核</button>'+
-  '<button class="btn" onclick="exportTable(\'lease\',1,\'铺位匹配表.csv\')">导出线索表</button></div></div>';}
+'<div class="card"><p class="sec-label">合同信息（填完自动带入模板）</p>'+
+  '<div class="formgrid">'+
+    '<div class="field"><label>甲方 · 出租方</label><input class="inp" id="ctPartyA" value="广州圣地商业管理有限公司"></div>'+
+    '<div class="field"><label>乙方 · 商户名称</label><input class="inp" id="ctMerchant" value="某连锁餐饮"></div>'+
+    '<div class="field"><label>铺位编号</label><input class="inp" id="ctShop" value="P08"></div>'+
+    '<div class="field"><label>建筑面积（㎡）</label><input class="inp" id="ctArea" value="120"></div>'+
+    '<div class="field"><label>经营用途</label><input class="inp" id="ctUse" value="餐饮"></div>'+
+    '<div class="field"><label>合同金额（元）</label><input class="inp" id="ctAmount" value="480000"></div>'+
+    '<div class="field"><label>金额大写（自动）</label><input class="inp" id="ctAmtUpper" disabled style="background:#f5f5f7;color:#6e6e73"></div>'+
+    '<div class="field"><label>履约保证金（元）</label><input class="inp" id="ctDeposit" value="96000"></div>'+
+    '<div class="field"><label>租赁起始日</label><input class="inp" type="date" id="ctStart" value="2026-01-01"></div>'+
+    '<div class="field"><label>租赁截止日</label><input class="inp" type="date" id="ctEnd" value="2028-12-31"></div>'+
+    '<div class="field"><label>租赁期限</label><input class="inp" id="ctTerm" value="3 年"></div>'+
+    '<div class="field"><label>免租期（天）</label><input class="inp" id="ctFree" value="30"></div>'+
+    '<div class="field"><label>支付周期</label><input class="inp" id="ctCycle" value="季度"></div>'+
+    '<div class="field"><label>租金年递增</label><input class="inp" id="ctStep" value="5%"></div>'+
+    '<div class="field"><label>联营分成比例</label><input class="inp" id="ctShare" value="22%"></div>'+
+  '</div></div>'+
+'<div class="card"><p class="sec-label">正式合同模板 · 可改条款（改完自动保存）</p>'+
+  '<div class="tplbar">'+
+    '<select class="inp" id="ctKind" onchange="switchCTpl()"><option value="lease">商铺租赁合同（正式）</option><option value="joint">联营合作合同（正式）</option></select>'+
+    '<button class="btn btn-s" onclick="resetContract()">恢复默认</button>'+
+    '<button class="btn btn-s" onclick="contractAudit()">合规审核清单</button>'+
+  '</div>'+
+  '<p class="hint" style="margin:10px 0 6px">点变量插到光标处，方括号内容会自动替换成上面填的信息：</p>'+
+  '<div class="varbar">'+CONTRACT_VARS.map(v=>'<button class="varchip" onclick="insertCVar(\''+v+'\')">{'+v+'}</button>').join('')+'</div>'+
+  '<div class="tplgrid">'+
+    '<div><div class="ct" style="margin-bottom:6px">编辑合同条款</div>'+
+      '<textarea id="ctLease" class="tpledit" spellcheck="false"></textarea>'+
+      '<textarea id="ctJoint" class="tpledit" spellcheck="false" style="display:none"></textarea></div>'+
+    '<div><div class="ct" style="margin-bottom:6px">合同预览</div>'+
+      '<div class="doc" id="ctPreview"></div></div>'+
+  '</div>'+
+  '<div class="actions" style="margin-top:14px">'+
+    '<button class="btn primary" onclick="downloadContract()">下载正式合同</button>'+
+    '<button class="btn" onclick="exportTable(\'lease\',1,\'铺位匹配表.csv\')">导出线索表</button>'+
+    '<span class="hint">生成的合同为正式格式文本，签署前请法务复核</span>'+
+  '</div></div>';}
 
 /* ===== 页面7：工程物业运维 ===== */
 function pageProperty(){return head('后勤与安全 / 工程','工程物业 AI 运维','设备运维、合同履约跟踪、预测性维护与能耗优化，一屏掌握。',true)+
@@ -1117,6 +1270,7 @@ buildNav();
 const restored=restoreTables();
 makeEditable();
 initTpl();
+initContract();
 go('today');
 if(restored)toastDemo('已恢复本浏览器保存的 '+restored+' 页数据');
 </script>
