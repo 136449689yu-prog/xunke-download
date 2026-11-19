@@ -93,7 +93,7 @@ body{
 .ec-tools{font-size:12px;color:var(--muted)}
 .ec-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .ec-links .btn{font-size:12px;padding:6px 12px}
-@media(max-width:760px){.expert-strip{flex-wrap:wrap}.ex-tx span{white-space:normal}.expert-strip .btn{margin-left:41px}}
+@media(max-width:760px){.expert-strip{flex-wrap:wrap;gap:10px}.ex-tx{flex:1 1 100%}.ex-tx b,.ex-tx span{white-space:normal}.expert-strip .btn{margin-left:0;width:100%}}
 
 .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px}
 .chartbox{min-width:0}
@@ -256,6 +256,76 @@ td{padding:12px}
 .aiview{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
 .aiview iframe{width:100%;height:820px;border:0;display:block;background:#fff}
 @media(max-width:760px){.main{padding:20px 16px 80px}.card{padding:20px 16px;border-radius:16px}.aiview iframe{height:720px}}
+
+/* ============================================================
+   Apple 设计系统层：统一色板 / 字体阶梯 / 圆角 / 间距 / 阴影
+   —— Apple DESIGN.md：单一 Action Blue、无卡片阴影(hairline 替代)、
+      SF Pro 负字距大标题、字重只用 400/600、圆角 pill/lg/sm
+   ============================================================ */
+:root{
+  --blue:#0066cc;          /* Apple Action Blue —— 唯一交互色 */
+  --blue-hover:#0058b0;
+  --ink:#1d1d1f;           /* Near-Black Ink */
+  --sub:#6e6e73;           /* Ink Muted */
+  --muted:#86868b;         /* 次级说明 */
+  --line:#e8e8ed;          /* Hairline soft */
+  --hairline:rgba(0,0,0,.08);
+  --paper:#f5f5f7;         /* Parchment 画布 */
+  --pearl:#fafafc;         /* Pearl 表面 */
+  --card:#ffffff;
+  --shadow:none;           /* Apple: 卡片不投影，靠表面色与细线分层 */
+}
+body{background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased}
+/* —— 落地页首屏头：SF Pro Display 大标题 + 负字距 + 分类眉标 + 细分隔 —— */
+.phead{padding:40px 0 28px;margin:0 0 28px;border-bottom:1px solid var(--hairline)}
+.phead .eyebrow{font-size:12px;color:var(--blue);font-weight:600;letter-spacing:.08em;margin-bottom:12px;text-transform:uppercase}
+.phead h1{font-size:40px;font-weight:600;letter-spacing:-.02em;line-height:1.1;color:var(--ink)}
+.phead p{font-size:17px;font-weight:400;line-height:1.47;color:var(--sub);margin-top:14px;max-width:720px;letter-spacing:-.01em}
+.phead .title-row{align-items:flex-start;gap:18px}
+.phead .hero-ic{width:52px;height:52px;flex:0 0 52px;border:1px solid var(--hairline);border-radius:14px;background:var(--card);display:grid;place-items:center;color:var(--blue)}
+.phead .hero-ic svg{width:26px;height:26px;stroke-width:1.5}
+.phead .hero-tx{min-width:0}
+@media(max-width:760px){.phead{padding:24px 0 20px;margin-bottom:20px}.phead h1{font-size:30px}.phead p{font-size:15px}.phead .hero-ic{width:40px;height:40px;flex-basis:40px;border-radius:12px}.phead .hero-ic svg{width:20px;height:20px}.phead .title-row{gap:12px}}
+/* —— 表面：白卡 + hairline，无阴影 —— */
+.card{background:var(--card);border:1px solid var(--hairline);border-radius:18px;padding:28px 30px;box-shadow:none;margin-bottom:20px}
+.kpi{background:var(--pearl);border:1px solid var(--hairline);border-radius:14px;padding:20px 22px;box-shadow:none}
+.kpi .v{font-size:30px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sec-label{font-size:12px;font-weight:600;color:var(--sub);letter-spacing:.06em;text-transform:uppercase;margin-bottom:18px}
+.chartbox .ct{font-size:15px;font-weight:600;letter-spacing:-.01em}
+/* —— 字重阶梯：仅 400 / 600，去掉 500 —— */
+.brand .bt,.nav button.active,.chartbox .ct,.ec-name,.ec-links b,.msg .who{font-weight:600}
+th{font-weight:600;letter-spacing:.02em}
+/* —— 按钮：主色 pill，press 缩放 0.95，焦点蓝描边 —— */
+.btn{border-radius:9999px;padding:9px 20px;font-size:14px;font-weight:400;transition:transform .2s,background .2s,color .2s,border-color .2s}
+.btn:hover{background:#e8e8ed}
+.btn:active{transform:scale(.95)}
+.btn.primary{background:var(--blue);color:#fff}
+.btn.primary:hover{background:var(--blue-hover)}
+.btn.primary:focus-visible{outline:2px solid var(--blue-hover);outline-offset:2px}
+.btn-s{border-radius:9999px;background:transparent;border:1px solid var(--blue);color:var(--blue);padding:6px 14px;font-weight:400}
+.btn-s:hover{background:rgba(0,102,204,.08)}
+.varchip{border-radius:9999px;background:var(--paper);color:var(--blue);font-weight:400}
+.ec-skills span{border-radius:9999px;background:var(--paper);color:var(--sub);font-weight:400}
+.varchip:hover{background:rgba(0,102,204,.1)}
+/* —— 输入：44px 高，hairline 焦点 —— */
+.inp{border-radius:10px;border:1px solid var(--line);transition:border-color .2s,box-shadow .2s}
+.inp:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,102,204,.12)}
+/* —— 专家卡：细线分层，无阴影 —— */
+.expert-strip{border:1px solid var(--hairline);border-left:3px solid var(--blue);box-shadow:none;background:var(--card);border-radius:14px;padding:14px 20px}
+.expert-card{border:1px solid var(--hairline);border-radius:18px;padding:24px;box-shadow:none}
+/* —— 消息气泡：白/灰表面 + 细线，无阴影 —— */
+.msg.bot{background:var(--card);border:1px solid var(--line);box-shadow:none}
+.msg.me{background:var(--blue)}
+/* —— 数据可视化：细网格线、克制配色 —— */
+.bar{background:var(--paper)}
+.bar>i{background:var(--blue);border-radius:9999px}
+.doc{background:var(--pearl);border:1px solid var(--hairline);border-radius:14px}
+.status-line{border:1px solid var(--hairline);box-shadow:none}
+.aiview{border:1px solid var(--hairline);border-radius:18px}
+/* —— toast / 悬浮：保留轻量毛玻璃 —— */
+#toast{background:rgba(29,29,31,.92)}
+/* —— 去掉残留的彩色装饰阴影 —— */
+.mtoggle{box-shadow:0 6px 20px rgba(0,0,0,.16)}
 </style>
 </head>
 <body>
@@ -372,7 +442,14 @@ function tableHTML(rows,cols){
   return '<div class="tablewrap"><table><thead><tr>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div>';
 }
 function kpi(k,v,s,color){return '<div class="kpi"><div class="k">'+esc(k)+'</div><div class="v '+(color||'')+'">'+esc(v)+'</div><div class="s">'+esc(s||'')+'</div></div>';}
-function head(eyebrow,title,desc,tag){return '<div class="phead"><div class="title-row"><span class="menu-btn" onclick="toggleSide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></span><div><div class="eyebrow">'+esc(eyebrow)+'</div><h1>'+esc(title)+(tag?'':'')+'</h1><p>'+esc(desc)+'</p></div></div></div>';}
+function head(eyebrow,title,desc,icon){
+  var ico=(icon&&typeof ICON!=='undefined'&&ICON[icon])?ICON[icon]:(typeof ICON!=='undefined'?ICON.today:'');
+  return '<div class="phead"><div class="title-row">'+
+    '<span class="menu-btn" onclick="toggleSide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h18"/></svg></span>'+
+    '<span class="hero-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">'+ico+'</svg></span>'+
+    '<div class="hero-tx"><div class="eyebrow">'+esc(eyebrow)+'</div><h1>'+esc(title)+'</h1><p>'+esc(desc)+'</p></div>'+
+    '</div></div>';
+}
 
 /* ===== 公共：真实导入 / 导出 / 下载（纯本地，无外部依赖） ===== */
 function dl(name,text,type){
@@ -733,7 +810,7 @@ const VAL_ROWS=[
   {id:'M006',pos:176000,bank:172000,diff:'2.3%',gap:4000,rate:'低',day:'—',note:'无异常'},
   {id:'M008',pos:142000,bank:139000,diff:'2.1%',gap:3000,rate:'低',day:'—',note:'无异常'}
 ];
-function pageValidator(){return head('营运管理 / 真实性核验','商户营业额核验','自报营业额与 POS、银行流水交叉比对，直接出疑点清单和抽成流失测算。',true)+
+function pageValidator(){return head('营运管理 / 真实性核验','商户营业额核验','自报营业额与 POS、银行流水交叉比对，直接出疑点清单和抽成流失测算。','validator')+
 '<div class="card"><p class="sec-label">核验概览 · 抽成率 15%</p><div class="kpis">'+
   kpi('疑似少报流水','¥426,400','三源对账缺口合计','red')+
   kpi('预估抽成流失','¥63,960','按 15% 抽成率测算','red')+
@@ -773,7 +850,7 @@ const COL_ROWS=[
   {m:'肯德基',p:'白云新城',f:'租金',gross:28000,red:0,net:28000,d:30,s:280,rate:'低',act:'常规催收·定期提醒',phone:'188****6144',lit:'无'},
   {m:'周大福',p:'广州塔项目',f:'物业费',gross:19000,red:0,net:19000,d:18,s:150,rate:'低',act:'常规催收',phone:'186****7168',lit:'无'}
 ];
-function pageCollection(){return head('营运管理 / 清收协同','欠费催收分级','多项目、多费项全量归集，扣减免、看账龄、核诉讼状态，按「金额 × 账龄 × 风险」排优先级。',true)+
+function pageCollection(){return head('营运管理 / 清收协同','欠费催收分级','多项目、多费项全量归集，扣减免、看账龄、核诉讼状态，按「金额 × 账龄 × 风险」排优先级。','collection')+
 '<div class="card"><p class="sec-label">清收概览</p><div class="kpis">'+
   kpi('未缴净额','¥986,400','已扣减免','red')+
   kpi('减免合计','¥76,200','已核减金额','ink')+
@@ -807,7 +884,7 @@ function pageCollection(){return head('营运管理 / 清收协同','欠费催�
 '</div></div>';}
 
 /* ===== 页面3：经营汇报 ===== */
-function pageReport(){return head('营运管理 / 自动成稿','月度经营汇报','锁定单月/单季/累计口径，自动复核合计，收入结构、趋势、汇报稿一键出。',true)+
+function pageReport(){return head('营运管理 / 自动成稿','月度经营汇报','锁定单月/单季/累计口径，自动复核合计，收入结构、趋势、汇报稿一键出。','report')+
 '<div class="card"><p class="sec-label">2026 年 10 月 · 核心指标</p><div class="kpis">'+
   kpi('总收入','¥286.4万','三源合计','blue')+
   kpi('商户总数','128','个在营商户','ink')+
@@ -839,7 +916,7 @@ function pageReport(){return head('营运管理 / 自动成稿','月度经营汇
   '</div></div>';}
 
 /* ===== 页面4：企划活动方案 ===== */
-function pageEvents(){return head('增长与招商 / 企划','企划活动方案生成','输入需求，自动生成活动大纲、执行计划、预算分配和风险提示。',true)+
+function pageEvents(){return head('增长与招商 / 企划','企划活动方案生成','输入需求，自动生成活动大纲、执行计划、预算分配和风险提示。','events')+
 '<div class="card"><p class="sec-label">活动概览</p><div class="kpis">'+
   kpi('活动方案','3','个进行中','blue')+
   kpi('预算合计','¥38万','三季度活动','ink')+
@@ -874,7 +951,7 @@ function pageEvents(){return head('增长与招商 / 企划','企划活动方案
 </script>
 <script>
 /* ===== 页面5：催费函生成 ===== */
-function pageLetter(){return head('增长与招商 / 催缴','催费函自动生成','按金额和账龄选模板、定语气，批量生成催费函；营业额异常一并核验出疑点。',true)+
+function pageLetter(){return head('增长与招商 / 催缴','催费函自动生成','按金额和账龄选模板、定语气，批量生成催费函；营业额异常一并核验出疑点。','letter')+
 '<div class="card"><p class="sec-label">生成概览</p><div class="kpis">'+
   kpi('待生成','18','封催费函','blue')+
   kpi('紧急语气','5','账龄 > 90 天','red')+
@@ -919,7 +996,7 @@ function pageLetter(){return head('增长与招商 / 催缴','催费函自动生
 ])+'</div>';}
 
 /* ===== 页面6：招商合同与线索 ===== */
-function pageLease(){return head('增长与招商 / 招商','招商合同与线索管理','合同模板、智能生成、合规审核；线索归集、续约预警、铺位匹配一站式。',true)+
+function pageLease(){return head('增长与招商 / 招商','招商合同与线索管理','合同模板、智能生成、合规审核；线索归集、续约预警、铺位匹配一站式。','lease')+
 '<div class="card"><p class="sec-label">招商概览</p><div class="kpis">'+
   kpi('线索总数','32','条','blue')+
   kpi('意向客户','9','个高意向','purple')+
@@ -992,7 +1069,7 @@ function pageLease(){return head('增长与招商 / 招商','招商合同与线�
   '</div></div>';}
 
 /* ===== 页面7：工程物业运维 ===== */
-function pageProperty(){return head('后勤与安全 / 工程','工程物业 AI 运维','设备运维、合同履约跟踪、预测性维护与能耗优化，一屏掌握。',true)+
+function pageProperty(){return head('后勤与安全 / 工程','工程物业 AI 运维','设备运维、合同履约跟踪、预测性维护与能耗优化，一屏掌握。','property')+
 '<div class="card"><p class="sec-label">运维概览</p><div class="kpis">'+
   kpi('在管设备','156','台','blue')+
   kpi('故障预警','4','台需处理','red')+
@@ -1034,7 +1111,7 @@ function pageProperty(){return head('后勤与安全 / 工程','工程物业 AI 
 '</div></div>';}
 
 /* ===== 页面8：安防管理 ===== */
-function pageSecurity(){return head('后勤与安全 / 安防','安防 AI 管理','设备运维、停车场收入分析、安全事件预警与应急，一屏掌握安防态势。',true)+
+function pageSecurity(){return head('后勤与安全 / 安防','安防 AI 管理','设备运维、停车场收入分析、安全事件预警与应急，一屏掌握安防态势。','security')+
 '<div class="card"><p class="sec-label">安防概览</p><div class="kpis">'+
   kpi('安防设备','218','台','blue')+
   kpi('离线/故障','3','台需处理','red')+
@@ -1114,7 +1191,7 @@ function expertStrip(id){
     '<span class="ex-tx"><b>负责专家 · '+esc(e.name)+'</b><span>'+esc(e.duty)+'</span></span>'+
     '<button class="btn" onclick="go(\'experts\')">看专家团队</button></div>';
 }
-function pageExperts(){return head('团队 / 职责','商业地产 AI 运营专家团队','6 位专家分工协作，每位对应工作台里的具体工具。点击工具可直接跳转。',true)+
+function pageExperts(){return head('团队 / 职责','商业地产 AI 运营专家团队','6 位专家分工协作，每位对应工作台里的具体工具。点击工具可直接跳转。','experts')+
 '<div class="card"><p class="sec-label">团队构成</p><div class="kpis">'+
   kpi('专家总数','6','位','blue')+kpi('覆盖领域','5','营运/企划/招商/工程/安防','ink')+
   kpi('分工工具','8','6 位专家合计覆盖')+kpi('总负责人','1','战略统筹','green')+
@@ -1155,7 +1232,7 @@ function pageToday(){
   const high=sorted.filter(x=>x.lv==='高').length;
   const bySrc={};sorted.forEach(x=>bySrc[x.src]=(bySrc[x.src]||0)+x.amt);
   const srcColor={'营业额核验':'#0071e3','欠费催收':'#ff3b30'};
-  return head('总览 / 今日优先','今日待办','把各工具里的高风险项拉到一起，按涉及金额从大到小排。点「去处理」直接跳到对应工具。',true)+
+  return head('总览 / 今日优先','今日待办','把各工具里的高风险项拉到一起，按涉及金额从大到小排。点「去处理」直接跳到对应工具。','today')+
   '<div class="card"><p class="sec-label">今日概览</p><div class="kpis">'+
     kpi('待处理事项',sorted.length+URGENT.length,'条，含 '+URGENT.length+' 条时间紧急','blue')+
     kpi('涉及金额',money(total),'对账缺口 + 净欠费','red')+
@@ -1194,7 +1271,7 @@ function pageShared(){
   var live='https://workbuddy.link/p/PV8vq50lYC81cQIumfZoqm';
   var edit='https://www.workbuddy.cn/space/d/PV8vq50lYC81cQIumfZoqm';
   return head('数据 / 云端共享','共享数据',
-    '商户流水、欠费催收、经营数据三张表放在资料库里。团队改表后，实时版读到的是最新数据；快照版打开即用。')+
+    '商户流水、欠费催收、经营数据三张表放在资料库里。团队改表后，实时版读到的是最新数据；快照版打开即用。','shared')+
   '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
       '<span class="tag gray" id="sharedMode">快照版</span>'+
       '<span style="font-size:12px;color:var(--muted);flex:1;min-width:180px">实时版需登录 WorkBuddy；快照版无需登录</span>'+
