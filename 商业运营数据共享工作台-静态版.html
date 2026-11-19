@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>商业运营数据共享工作台</title>
+<style>
+:root{
+  --bg:#f5f5f7; --card:#ffffff; --ink:#1d1d1f; --sub:#6e6e73; --line:#e8e8ed;
+  --blue:#0071e3; --green:#30d158; --orange:#ff9f0a; --red:#ff3b30; --purple:#5e5ce6;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC","Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px 80px}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(245,245,247,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1180px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:650;font-size:16px;letter-spacing:-.01em}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
+.actions{display:flex;align-items:center;gap:10px}
+.sync{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--sub);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--sub);display:inline-block}
+.dot.live{background:var(--green);box-shadow:0 0 0 4px rgba(48,209,88,.15)}
+.dot.err{background:var(--red)}
+.btn{border:0;background:var(--blue);color:#fff;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s ease}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:rgba(0,0,0,.05);color:var(--ink)}
+header.hero{padding:44px 0 26px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--blue);text-transform:uppercase;margin-bottom:10px}
+h1{margin:0;font-size:38px;line-height:1.12;letter-spacing:-.03em;font-weight:700}
+.sub{margin:12px 0 0;color:var(--sub);font-size:17px;max-width:700px}
+.srcbar{margin-top:20px;display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:12px;color:var(--sub)}
+.srcbar b{color:var(--ink);font-weight:600}
+.grid{display:grid;gap:16px}
+.kpis{grid-template-columns:repeat(4,1fr);margin-bottom:26px}
+.card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.03)}
+.kpi{padding:22px}
+.kpi .lbl{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:8px}
+.kpi .ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.kpi .val{font-size:32px;font-weight:700;letter-spacing:-.02em;margin-top:14px;font-variant-numeric:tabular-nums}
+.kpi .hint{font-size:12px;color:var(--sub);margin-top:4px}
+.section{margin-bottom:26px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:0 4px 14px}
+.sec-head h2{font-size:22px;letter-spacing:-.02em;margin:0;font-weight:680}
+.sec-head .desc{font-size:13px;color:var(--sub)}
+.panel{padding:8px 0;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:12px;color:var(--sub);font-weight:600;padding:12px 20px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:13px 20px;border-bottom:1px solid #f2f2f5;white-space:nowrap;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+.num{text-align:right}
+.tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(0,0,0,.05)}
+.tag.red{background:rgba(255,59,48,.12);color:var(--red)}
+.tag.orange{background:rgba(255,159,10,.14);color:#c77700}
+.tag.green{background:rgba(48,209,88,.14);color:#1a8a38}
+.tag.blue{background:rgba(0,113,227,.12);color:var(--blue)}
+.tag.purple{background:rgba(94,92,230,.12);color:var(--purple)}
+.tag.gray{background:rgba(0,0,0,.05);color:var(--sub)}
+.bar{height:6px;border-radius:4px;background:#eee;overflow:hidden;min-width:80px}
+.bar>i{display:block;height:100%;border-radius:4px;background:var(--blue)}
+.stack{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+.chart{padding:22px}
+.chart h3{margin:0 0 4px;font-size:15px;font-weight:650}
+.chart .c-sub{font-size:12px;color:var(--sub);margin-bottom:18px}
+.brow{display:flex;align-items:center;gap:12px;margin:12px 0}
+.brow .name{width:88px;font-size:13px;color:var(--sub);flex:none}
+.brow .track{flex:1;height:22px;background:#f2f2f5;border-radius:7px;overflow:hidden;position:relative}
+.brow .fill{height:100%;border-radius:7px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:#fff;font-size:11px;font-weight:700;min-width:34px;transition:width .5s ease}
+.brow .amt{width:96px;text-align:right;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;flex:none}
+.empty{padding:40px 20px;text-align:center;color:var(--sub);font-size:14px}
+.empty .big{font-size:34px;opacity:.4;margin-bottom:8px}
+footer{padding:30px 4px 0;font-size:12px;color:var(--sub);text-align:center;line-height:1.8}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 22px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:all .3s ease;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.stack{grid-template-columns:1fr}h1{font-size:30px}}
+@media(max-width:560px){.wrap{padding:0 16px 60px}.kpis{grid-template-columns:1fr 1fr;gap:10px}.kpi{padding:16px}.kpi .val{font-size:25px}th,td{padding:10px 12px}.sub{font-size:15px}.hide-sm{display:none}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="topbar-in">
+  <div class="brand"><span class="logo">◈</span><span>商业运营数据共享工作台</span></div>
+  <div class="actions">
+    <span class="sync"><span class="dot" id="sdot"></span><span id="stxt">正在连接资料库…</span></span>
+    <button class="btn ghost" id="refresh" onclick="loadAll()">刷新</button>
+  </div>
+</div></div>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Live Data · 资料库云端共享</div>
+    <h1>一处更新，处处可见</h1>
+    <p class="sub">团队在资料库的三张共享台账里填数据，这个工作台打开就是最新的。表格一有变动，页面自动刷新——不用再来回传文件。</p>
+    <div class="srcbar"><span class="dot live"></span>数据来源：<b>WorkBuddy 资料库</b><span>·</span><span id="upd">等待同步</span></div>
+  </header>
+
+  <div class="grid kpis" id="kpis">
+    <div class="card kpi"><div class="lbl"><span class="ic" style="background:rgba(0,113,227,.12)">▦</span>流水记录</div><div class="val" data-sp-bindable="database" data-sp-database-id="nuytUGGjvi946uMchNzx3N" id="k_flow_n">—</div><div class="hint">商户流水笔数</div></div>
+    <div class="card kpi"><div class="lbl"><span class="ic" style="background:rgba(255,159,10,.15)">◷</span>欠费总额</div><div class="val" data-sp-bindable="database" data-sp-database-id="j8u6A8Msp5hGZNPry2HHOW" id="k_debt_sum">—</div><div class="hint">全部未结欠费</div></div>
+    <div class="card kpi"><div class="lbl"><span class="ic" style="background:rgba(255,59,48,.12)">⚠</span>高风险欠费</div><div class="val" data-sp-bindable="database" data-sp-database-id="j8u6A8Msp5hGZNPry2HHOW" id="k_debt_high">—</div><div class="hint">诉讼中 / 账龄&gt;90天</div></div>
+    <div class="card kpi"><div class="lbl"><span class="ic" style="background:rgba(48,209,88,.15)">↗</span>本月完成率</div><div class="val" data-sp-bindable="database" data-sp-database-id="KrN5EoPj90zy40CQyOiGYB" id="k_rate">—</div><div class="hint">实际 ÷ 预算</div></div>
+  </div>
+
+  <div class="stack">
+    <section class="section">
+      <div class="sec-head"><h2>流水来源结构</h2><span class="desc">POS / 银行 / 现金 金额占比</span></div>
+      <div class="card chart"><h3>三份流水对比</h3><div class="c-sub" id="flow_chart_sub">按来源汇总金额</div><div id="flow_chart"></div></div>
+    </section>
+    <section class="section">
+      <div class="sec-head"><h2>经营口径</h2><span class="desc">预算 vs 实际</span></div>
+      <div class="card chart"><h3>月度完成情况</h3><div class="c-sub">取最新月份</div><div id="report_chart"></div></div>
+    </section>
+  </div>
+
+  <section class="section">
+    <div class="sec-head"><h2>商户流水明细</h2><span class="desc">来自「商户流水台账」</span></div>
+    <div class="card panel"><table><thead><tr><th>日期</th><th>商户</th><th>商户编号</th><th>流水来源</th><th class="num">金额 (¥)</th></tr></thead><tbody id="flow_body"><tr><td colspan="5"><div class="empty"><div class="big">▦</div>正在从资料库读取…</div></td></tr></tbody></table></div>
+  </section>
+
+  <section class="section">
+    <div class="sec-head"><h2>欠费催收明细</h2><span class="desc">来自「欠费催收台账」· 按欠费金额排序</span></div>
+    <div class="card panel"><table><thead><tr><th>项目</th><th>商户</th><th>费项</th><th class="num">欠费金额</th><th class="num">账龄</th><th>付款历史</th><th>催收状态</th></tr></thead><tbody id="debt_body"><tr><td colspan="7"><div class="empty"><div class="big">◷</div>正在从资料库读取…</div></td></tr></tbody></table></div>
+  </section>
+
+  <section class="section">
+    <div class="sec-head"><h2>经营数据明细</h2><span class="desc">来自「经营数据台账」</span></div>
+    <div class="card panel"><table><thead><tr><th>月份</th><th>类型</th><th>项目</th><th class="num">金额 (¥)</th><th>说明</th></tr></thead><tbody id="report_body"><tr><td colspan="5"><div class="empty"><div class="big">↗</div>正在从资料库读取…</div></td></tr></tbody></table></div>
+  </section>
+
+  <footer>
+    数据存放于你的 WorkBuddy 资料库，团队成员共同维护 · 页面在资料库中打开时自动连接并实时更新<br>
+    在官网打开显示最近一次同步的快照；要一起填数据，请到资料库里打开本工作台或对应台账。
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script id="snapshotData" type="application/json">{"updated":"2026-11-19","flow":[{"商户":"星巴克","商户编号":"M001","日期":"2026-11-01T00:00:00Z","流水来源":"POS","金额":12800,"record_id":"Kbx7mBOYBqoaHt4YCxIOpN"},{"商户":"星巴克","商户编号":"M001","日期":"2026-11-01T00:00:00Z","流水来源":"银行","金额":12800,"record_id":"Io4Hr2KLer1vAetvTS9sDK"},{"商户":"星巴克","商户编号":"M001","日期":"2026-11-01T00:00:00Z","流水来源":"现金","金额":3200,"record_id":"R4YwPlMhlr7F2oYheSIvjc"},{"商户":"海底捞","商户编号":"M002","日期":"2026-11-01T00:00:00Z","流水来源":"POS","金额":45600,"record_id":"lXOZVLSsMHsQtLIPux1iCR"},{"商户":"海底捞","商户编号":"M002","日期":"2026-11-01T00:00:00Z","流水来源":"银行","金额":45200,"record_id":"kL0QEsWz6JecGnoAH2AyVt"},{"商户":"海底捞","商户编号":"M002","日期":"2026-11-01T00:00:00Z","流水来源":"现金","金额":8900,"record_id":"a8Ss9LX41MGhrNXxj0Stge"},{"商户":"优衣库","商户编号":"M003","日期":"2026-11-02T00:00:00Z","流水来源":"POS","金额":33000,"record_id":"xBNMSG8ub5UsgKcvdf60gs"},{"商户":"优衣库","商户编号":"M003","日期":"2026-11-02T00:00:00Z","流水来源":"银行","金额":33000,"record_id":"LwF14hpn7keU9YVhzjUOy6"},{"商户":"优衣库","商户编号":"M003","日期":"2026-11-02T00:00:00Z","流水来源":"现金","金额":1500,"record_id":"GnMJonDn5TweoR0FYj9ccL"}],"debt":[{"付款历史":"较差","催收状态":"诉讼中","到期日":"2026-08-15T00:00:00Z","商户":"云山莱火锅","商户类型":"餐饮","欠费金额":86000,"账龄天数":96,"费项":"租金","项目":"白云项目","record_id":"XfA0rgoUmuyqCaLLjBxsPl"},{"付款历史":"一般","催收状态":"催收中","到期日":"2026-09-20T00:00:00Z","商户":"梦丽莎","商户类型":"零售","欠费金额":52000,"账龄天数":60,"费项":"租金","项目":"双成项目","record_id":"1B0Hlg51rsJJHJxm79gGxI"},{"付款历史":"良好","催收状态":"承诺付款","到期日":"2026-10-05T00:00:00Z","商户":"德州酒馆","商户类型":"娱乐","欠费金额":18000,"账龄天数":45,"费项":"物业费","项目":"圣地新天地","record_id":"BaUO33PbuRuvLZe29ZG4jx"},{"付款历史":"一般","催收状态":"待催收","到期日":"2026-10-28T00:00:00Z","商户":"青柚电竞","商户类型":"娱乐","欠费金额":9600,"账龄天数":22,"费项":"水电费","项目":"云方商汇","record_id":"QkMAqyRYKOK0MtyBNoQ14R"},{"付款历史":"较差","催收状态":"催收中","到期日":"2026-09-10T00:00:00Z","商户":"花甲粉","商户类型":"餐饮","欠费金额":12500,"账龄天数":70,"费项":"推广费","项目":"白云项目","record_id":"GCTw5LHJBufbhcHqRXCqWI"}],"report":[{"月份":"2026-11","类型":"预算","说明":"11月租金预算","金额":5200000,"项目":"全公司","record_id":"rledOo9bAxKVSqZBZbG8Mh"},{"月份":"2026-11","类型":"实际","说明":"11月租金实际","金额":4830000,"项目":"全公司","record_id":"Xb6qWcWGF6dIJBzLei2osA"},{"月份":"2026-11","类型":"招商","说明":"新签3铺","金额":680000,"项目":"白云项目","record_id":"C2tfdJp0XhNIxrFgl50bwu"},{"月份":"2026-11","类型":"物业","说明":"物业费收入","金额":760000,"项目":"全公司","record_id":"Ax1MOuZUpraOZO6xP9mBG1"},{"月份":"2026-11","类型":"活动","说明":"周末市集活动","金额":125000,"项目":"圣地新天地","record_id":"yO3qSjFDmz3I3OKy6Y9h1t"},{"月份":"2026-10","类型":"预算","说明":"10月租金预算","金额":5100000,"项目":"全公司","record_id":"r0ItdMv3zOGw3xp7tAaE7G"},{"月份":"2026-10","类型":"实际","说明":"10月租金实际","金额":5010000,"项目":"全公司","record_id":"lw3eD2Q1K8tkPSCdUDLv1a"}]}</script>
+<script>
+(function(){
+  var DB_FLOW='nuytUGGjvi946uMchNzx3N';
+  var DB_DEBT='j8u6A8Msp5hGZNPry2HHOW';
+  var DB_RPT ='KrN5EoPj90zy40CQyOiGYB';
+  var smart=window.__SMART_PAGE__;
+  var db=smart&&smart.database;
+  var hasDB=!!(db&&typeof db.query==='function');
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function money(n){n=Number(n)||0;return n.toLocaleString('zh-CN',{maximumFractionDigits:2});}
+  function setText(id,v,dbid){var el=document.getElementById(id);if(!el)return;el.textContent=v;if(dbid){el.setAttribute('data-sp-bindable','database');el.setAttribute('data-sp-database-id',dbid);}}
+  function status(cls,txt){var d=document.getElementById('sdot'),t=document.getElementById('stxt');if(d)d.className='dot'+(cls?' '+cls:'');if(t)t.textContent=txt;}
+  function toast(m){var t=document.getElementById('toast');if(!t)return;t.textContent=m;t.className='toast show';setTimeout(function(){t.className='toast';},2200);}
+  function now(){var d=new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2);}
+  function emptyRow(cols,msg){return '<tr><td colspan="'+cols+'"><div class="empty"><div class="big">◌</div>'+msg+'</div></td></tr>';}
+
+  // 分页拉全：单页最多 200，按 hasMore/nextCursor 续页，三道保险
+  function collect(acc,guard){return {acc:acc,guard:guard};}
+  function loadFlow(cb){
+    var acc=[],guard=0;
+    function step(cursor){
+      db.query({databaseId:'nuytUGGjvi946uMchNzx3N',pageSize:200,sorts:[{property:'日期',direction:'descending'}],startCursor:cursor}).then(function(r){
+        acc=acc.concat(r.results||[]);var next=r.nextCursor;
+        if(r.hasMore&&next&&next!==cursor&&(r.results||[]).length&&guard<100){guard++;step(next);}else{cb(acc);}
+      }).catch(function(e){console.error('[database] 流水读取失败',e);cb(acc,true);});
+    }
+    step(undefined);
+  }
+  function loadDebt(cb){
+    var acc=[],guard=0;
+    function step(cursor){
+      db.query({databaseId:'j8u6A8Msp5hGZNPry2HHOW',pageSize:200,sorts:[{property:'欠费金额',direction:'descending'}],startCursor:cursor}).then(function(r){
+        acc=acc.concat(r.results||[]);var next=r.nextCursor;
+        if(r.hasMore&&next&&next!==cursor&&(r.results||[]).length&&guard<100){guard++;step(next);}else{cb(acc);}
+      }).catch(function(e){console.error('[database] 欠费读取失败',e);cb(acc,true);});
+    }
+    step(undefined);
+  }
+  function loadRpt(cb){
+    var acc=[],guard=0;
+    function step(cursor){
+      db.query({databaseId:'KrN5EoPj90zy40CQyOiGYB',pageSize:200,startCursor:cursor}).then(function(r){
+        acc=acc.concat(r.results||[]);var next=r.nextCursor;
+        if(r.hasMore&&next&&next!==cursor&&(r.results||[]).length&&guard<100){guard++;step(next);}else{cb(acc);}
+      }).catch(function(e){console.error('[database] 经营读取失败',e);cb(acc,true);});
+    }
+    step(undefined);
+  }
+
+  function levelTag(s){
+    s=String(s||'');
+    var map={'诉讼中':'red','催收中':'orange','待催收':'gray','承诺付款':'blue','良好':'green','一般':'orange','较差':'red'};
+    return '<span class="tag '+(map[s]||'gray')+'">'+esc(s||'—')+'</span>';
+  }
+
+  function renderFlow(rows,err){
+    var body=document.getElementById('flow_body');
+    if(err&&!rows.length){body.innerHTML=emptyRow(5,'读取失败，请点右上角刷新重试');}
+    else if(!rows.length){body.innerHTML=emptyRow(5,'「商户流水台账」暂无数据，到资料库里添加吧');}
+    else{
+      var h='';
+      for(var i=0;i<rows.length;i++){var r=rows[i];
+        var d=r['日期']?String(r['日期']).slice(0,10):'—';
+        h+='<tr><td>'+esc(d)+'</td><td>'+esc(r['商户'])+'</td><td class="hide-sm">'+esc(r['商户编号'])+'</td><td>'+levelTag(r['流水来源'])+'</td><td class="num">'+money(r['金额'])+'</td></tr>';
+      }
+      body.innerHTML=h;
+    }
+    setText('k_flow_n',rows.length,DB_FLOW);
+    // 来源结构
+    var by={};for(var j=0;j<rows.length;j++){var k=rows[j]['流水来源']||'其它';by[k]=(by[k]||0)+(Number(rows[j]['金额'])||0);}
+    var keys=['POS','银行','现金'],max=0,i2;
+    for(i2=0;i2<keys.length;i2++){max=Math.max(max,by[keys[i2]]||0);}
+    var colors={'POS':'var(--blue)','银行':'var(--purple)','现金':'var(--orange)'};
+    var html='',total=0;for(i2=0;i2<keys.length;i2++){total+=(by[keys[i2]]||0);}
+    for(i2=0;i2<keys.length;i2++){
+      var v=by[keys[i2]]||0,pct=total?Math.round(v/total*100):0,w=max?Math.round(v/max*100):0;
+      html+='<div class="brow"><span class="name">'+keys[i2]+'</span><span class="track"><span class="fill" style="width:'+w+'%;background:'+colors[keys[i2]]+'">'+pct+'%</span></span><span class="amt">¥'+money(v)+'</span></div>';
+    }
+    document.getElementById('flow_chart').innerHTML=html||emptyRow(1,'暂无数据');
+    setText('flow_chart_sub','共 '+rows.length+' 笔 · 合计 ¥'+money(total)+' · '+now()+' 更新',DB_FLOW);
+  }
+
+  function renderDebt(rows,err){
+    var body=document.getElementById('debt_body');
+    var sorted=rows.slice().sort(function(a,b){return (Number(b['欠费金额'])||0)-(Number(a['欠费金额'])||0);});
+    if(err&&!sorted.length){body.innerHTML=emptyRow(7,'读取失败，请点右上角刷新重试');}
+    else if(!sorted.length){body.innerHTML=emptyRow(7,'「欠费催收台账」暂无数据');}
+    else{
+      var h='',sum=0,high=0;
+      for(var i=0;i<sorted.length;i++){var r=sorted[i];var amt=Number(r['欠费金额'])||0;sum+=amt;
+        var age=Number(r['账龄天数'])||0,st=String(r['催收状态']||'');
+        if(st==='诉讼中'||age>90)high++;
+        var ageTag=age>90?'<span class="tag red">'+age+'天</span>':age>60?'<span class="tag orange">'+age+'天</span>':'<span class="tag gray">'+age+'天</span>';
+        h+='<tr><td>'+esc(r['项目'])+'</td><td>'+esc(r['商户'])+'</td><td>'+esc(r['费项'])+'</td><td class="num">'+money(amt)+'</td><td class="num">'+ageTag+'</td><td>'+levelTag(r['付款历史'])+'</td><td>'+levelTag(r['催收状态'])+'</td></tr>';
+      }
+      body.innerHTML=h;
+      setText('k_debt_sum','¥'+money(sum),DB_DEBT);
+      setText('k_debt_high',high,DB_DEBT);
+    }
+    if(!sorted.length){setText('k_debt_sum','—',DB_DEBT);setText('k_debt_high','—',DB_DEBT);}
+  }
+
+  function renderReport(rows,err){
+    var body=document.getElementById('report_body');
+    if(err&&!rows.length){body.innerHTML=emptyRow(5,'读取失败，请点右上角刷新重试');}
+    else if(!rows.length){body.innerHTML=emptyRow(5,'「经营数据台账」暂无数据');}
+    else{
+      var h='';for(var i=0;i<rows.length;i++){var r=rows[i];
+        var tp=String(r['类型']||''),tc={'预算':'blue','实际':'green','招商':'purple','物业':'orange','活动':'gray'}[tp]||'gray';
+        h+='<tr><td>'+esc(r['月份'])+'</td><td><span class="tag '+tc+'">'+esc(tp)+'</span></td><td>'+esc(r['项目'])+'</td><td class="num">'+money(r['金额'])+'</td><td class="hide-sm">'+esc(r['说明'])+'</td></tr>';
+      }
+      body.innerHTML=h;
+    }
+    // 最新月份预算 vs 实际
+    var latest='',i2;for(i2=0;i2<rows.length;i2++){var m=String(rows[i2]['月份']||'');if(m>latest)latest=m;}
+    var bud=0,act=0;
+    for(i2=0;i2<rows.length;i2++){var r2=rows[i2];if(String(r2['月份'])===latest){var t=String(r2['类型']);if(t==='预算')bud+=Number(r2['金额'])||0;if(t==='实际')act+=Number(r2['金额'])||0;}}
+    var rate=bud?Math.round(act/bud*100):0;
+    setText('k_rate',(bud?rate+'%':'—'),DB_RPT);
+    var mx=Math.max(bud,act,1);
+    var html='<div class="c-sub" style="margin-top:-8px">'+esc(latest||'—')+' · 预算 ¥'+money(bud)+' / 实际 ¥'+money(act)+'</div>';
+    html+='<div class="brow"><span class="name">预算</span><span class="track"><span class="fill" style="width:'+Math.round(bud/mx*100)+'%;background:var(--sub)"></span></span><span class="amt">¥'+money(bud)+'</span></div>';
+    html+='<div class="brow"><span class="name">实际</span><span class="track"><span class="fill" style="width:'+Math.round(act/mx*100)+'%;background:var(--green)"></span></span><span class="amt">¥'+money(act)+'</span></div>';
+    html+='<div class="brow"><span class="name">完成率</span><span class="track"><span class="fill" style="width:'+Math.min(rate,100)+'%;background:var(--blue)">'+rate+'%</span></span><span class="amt">'+(bud?'':'—')+'</span></div>';
+    document.getElementById('report_chart').innerHTML=html;
+  }
+
+  function loadSnapshot(){
+    var inline=null;
+    try{var el=document.getElementById('snapshotData');inline=el?JSON.parse(el.textContent):null;}catch(e){}
+    function apply(d,label){
+      if(!d)return;
+      renderFlow(d.flow||[],false);renderDebt(d.debt||[],false);renderReport(d.report||[],false);
+      status('',label);setText('upd',(d.updated?d.updated+' · ':'')+'快照数据');
+    }
+    if(inline)apply(inline,'快照 · 打开即用');
+    if(location.protocol==='file:')return;
+    fetch('共享数据快照.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;})
+      .then(function(d){if(d&&d.flow)apply(d,'云端快照 · 自动更新');})
+      .catch(function(){});
+  }
+
+  var loading=false;
+  function loadAll(){
+    if(!hasDB){loadSnapshot();return;}
+    if(loading)return;loading=true;
+    var btn=document.getElementById('refresh');if(btn)btn.disabled=true;
+    status('','正在同步…');
+    var pending=3,done=0;
+    function tick(){done++;if(done>=pending){loading=false;if(btn)btn.disabled=false;status('live','已连接 · 实时');setText('upd',now()+' 更新');toast('已从资料库同步最新数据');}}
+    loadFlow(function(rows,err){renderFlow(rows,err);tick();});
+    loadDebt(function(rows,err){renderDebt(rows,err);tick();});
+    loadRpt(function(rows,err){renderReport(rows,err);tick();});
+  }
+
+  // 实时自动同步：表格一有变动，300ms 防抖后重读
+  var syncTimer=null;
+  if(hasDB&&typeof db.onUpdated==='function'){
+    try{
+      db.onUpdated(function(payload){
+        var ids=(payload&&payload.databaseIds)||[];
+        if(ids.indexOf(DB_FLOW)===-1&&ids.indexOf(DB_DEBT)===-1&&ids.indexOf(DB_RPT)===-1)return;
+        if(syncTimer)clearTimeout(syncTimer);
+        syncTimer=setTimeout(function(){status('','检测到更新…');loadAll();},300);
+      });
+    }catch(e){console.error('[database] 订阅失败',e);}
+  }
+
+  loadAll();
+})();
+</script>
+</body>
+</html>
