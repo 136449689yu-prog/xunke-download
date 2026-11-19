@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>停车运维工作台 · 寻客</title>
+<style>
+/* Vercel / Geist 设计系统：近白画布、墨黑主色、发丝边框、mono 技术标签、堆叠轻阴影 */
+:root{
+  --canvas:#fafafa; --canvas-2:#f5f5f5; --card:#ffffff;
+  --ink:#171717; --body:#4d4d4d; --mute:#888888;
+  --line:#ebebeb; --line-strong:#a1a1a1;
+  --primary:#171717; --on-primary:#ffffff;
+  --link:#0070f3; --success:#17c964; --warning:#f5a623; --error:#ee0000;
+  --blue:#0070f3; --green:#17c964; --orange:#f5a623; --red:#ee0000; --purple:#7928ca;
+  --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Monaco,monospace;
+  --shadow-sm:0 1px 1px rgba(0,0,0,.02),0 1px 2px rgba(0,0,0,.03),inset 0 0 0 1px rgba(0,0,0,.05);
+  --shadow-md:0 1px 1px rgba(0,0,0,.02),0 3px 6px -3px rgba(0,0,0,.05),inset 0 0 0 1px rgba(0,0,0,.05);
+  --shadow-lg:0 1px 2px rgba(0,0,0,.03),0 8px 16px -6px rgba(0,0,0,.08),inset 0 0 0 1px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Geist,Inter,system-ui,-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;
+  background:var(--canvas);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.hidden{display:none!important}
+.layout{display:flex;min-height:100vh}
+
+/* 侧边栏：app shell，active 用左缘黑色指示条 */
+.sidebar{width:224px;flex:none;background:var(--card);border-right:1px solid var(--line);
+  padding:24px 12px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600;letter-spacing:-.3px;padding:0 12px 28px}
+.brand-mark{width:22px;height:22px;background:var(--primary);color:#fff;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;font-size:12px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav-item{position:relative;text-align:left;border:0;background:transparent;color:var(--body);
+  font-size:14px;font-weight:500;padding:9px 12px;border-radius:6px;cursor:pointer;transition:background .15s,color .15s}
+.nav-item:hover{background:var(--canvas-2);color:var(--ink)}
+.nav-item.active{background:var(--canvas-2);color:var(--ink);font-weight:500}
+.nav-item.active::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;background:var(--primary);border-radius:2px}
+.side-foot{margin-top:auto;font-family:var(--mono);font-size:11px;color:var(--mute);line-height:1.7;padding:0 12px;letter-spacing:-.2px}
+
+/* 主区 */
+.main{flex:1;min-width:0;padding:36px 40px 64px;max-width:1500px}
+.topbar{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px}
+h1{font-size:32px;font-weight:600;line-height:40px;letter-spacing:-1.28px}
+.subtitle{color:var(--mute);font-size:13px;margin-top:4px}
+.top-actions{display:flex;gap:8px}
+.btn{border:1px solid var(--primary);border-radius:6px;padding:8px 14px;font-size:14px;font-weight:500;
+  cursor:pointer;background:var(--primary);color:var(--on-primary);transition:background .15s,transform .15s}
+.btn:hover{background:#333}.btn:active{transform:translateY(1px)}
+.btn.ghost{background:var(--card);color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{background:var(--canvas-2)}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+.kpi{background:var(--card);border-radius:8px;padding:20px;box-shadow:var(--shadow-sm)}
+.kpi .label{font-family:var(--mono);font-size:11px;color:var(--mute);letter-spacing:.2px;text-transform:uppercase}
+.kpi .value{font-size:28px;font-weight:600;letter-spacing:-.96px;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+.kpi .foot{font-size:12px;color:var(--mute)}
+.kpi .accent{width:24px;height:3px;border-radius:2px;margin-bottom:12px}
+
+/* 卡片与图表 */
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--card);border-radius:8px;padding:22px;box-shadow:var(--shadow-sm);min-width:0}
+.card.span-2{grid-column:span 2}.card.span-3{grid-column:span 3}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.card-head h2{font-size:14px;font-weight:500;letter-spacing:-.28px}
+.tag{font-family:var(--mono);font-size:11px;color:var(--mute);background:var(--canvas-2);
+  padding:3px 8px;border-radius:5px;letter-spacing:.1px}
+.chart{width:100%;min-height:200px}
+.chart.tall{min-height:270px}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.grid-line{stroke:var(--line);stroke-width:1}
+.axis-text{fill:var(--mute);font-size:10px;font-family:var(--mono)}
+.line-path{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dot{stroke:var(--card);stroke-width:2}
+.bar{transition:opacity .15s}
+
+/* 待办 */
+.todo-list{display:flex;flex-direction:column;gap:8px}
+.todo{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--canvas);
+  border:1px solid var(--line);border-radius:6px}
+.todo-dot{width:7px;height:7px;border-radius:50%;flex:none}
+.todo-text{flex:1;font-size:13px;line-height:1.4}
+.todo-num{font-family:var(--mono);font-size:16px;font-weight:500;font-variant-numeric:tabular-nums}
+
+/* 筛选与表格 */
+.filterbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.filterbar>span{font-family:var(--mono);font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.3px}
+.choice{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:6px 12px;font-size:13px;
+  color:var(--body);cursor:pointer;transition:all .15s}
+.choice:hover{border-color:var(--line-strong);color:var(--ink)}
+.choice.active{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.table-card{padding:4px 20px 12px;overflow-x:auto;box-shadow:var(--shadow-sm)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-family:var(--mono);font-size:11px;font-weight:400;color:var(--mute);
+  text-transform:uppercase;letter-spacing:.3px;padding:12px 10px;background:var(--canvas);
+  border-bottom:1px solid var(--line)}
+td{padding:12px 10px;border-bottom:1px solid var(--line);white-space:nowrap;color:var(--body)}
+td:first-child{font-family:var(--mono);color:var(--ink)}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--canvas)}
+.pill{display:inline-block;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:500}
+.pill.ok{background:#e6f9ee;color:#0f7a3d}
+.pill.fault{background:#feecec;color:#c50000}
+.pill.maintain{background:#fff4e0;color:#a35a00}
+.pill.gray{background:var(--canvas-2);color:var(--mute)}
+.pill.blue{background:#e8f1ff;color:var(--link)}
+.pill.red{background:#feecec;color:#c50000}
+.link-btn{border:0;background:none;color:var(--link);cursor:pointer;font-size:12px;padding:4px 6px}
+.link-btn:hover{text-decoration:underline}
+
+/* 分段控件 */
+.segmented{display:inline-flex;background:var(--canvas-2);border:1px solid var(--line);
+  border-radius:6px;padding:3px;margin-bottom:16px}
+.seg{border:0;background:transparent;padding:5px 16px;border-radius:4px;font-size:13px;font-weight:500;
+  color:var(--mute);cursor:pointer;transition:all .15s}
+.seg.active{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.legend{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.legend-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.legend-swatch{width:8px;height:8px;border-radius:2px}
+.legend-row .name{flex:1;color:var(--body)}
+.legend-row .amount{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.stat-list{display:flex;flex-direction:column}
+.stat{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
+.stat:last-child{border:0}
+.stat .k{font-size:12px;color:var(--mute)}
+.stat .v{font-family:var(--mono);font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--ink)}
+
+/* 车位明细 */
+.space-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:7px;margin-top:14px}
+.space{min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  border:1px solid var(--line);border-radius:6px;font-family:var(--mono);line-height:1.2}
+.space.occupied{background:#e8f1ff;border-color:#85b7eb;color:#0c447c}
+.space.free{background:var(--canvas);color:var(--mute)}
+.space .no{font-size:11px;font-weight:500}
+.space .hours{font-size:10px;opacity:.72}
+.space-summary{display:flex;gap:16px;font-family:var(--mono);font-size:12px;color:var(--mute)}
+.space-summary b{font-weight:500;color:var(--ink)}
+#space-hour{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;
+  padding:6px 10px;font-family:var(--mono);font-size:12px}
+
+/* 弹窗 */
+.modal-wrap{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;z-index:50}
+.modal{background:var(--card);border-radius:12px;width:min(440px,92vw);padding:26px;box-shadow:var(--shadow-lg)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-head h2{font-size:16px;font-weight:600;letter-spacing:-.28px}
+.icon-btn{border:1px solid var(--line);background:var(--card);width:28px;height:28px;border-radius:50%;font-size:16px;
+  color:var(--mute);cursor:pointer;line-height:1}
+.field{margin-bottom:14px}
+.field label{display:block;font-family:var(--mono);font-size:11px;color:var(--mute);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+.field input,.field select{width:100%;border:1px solid var(--line);border-radius:6px;padding:9px 12px;
+  font-size:13px;font-family:inherit;background:var(--card);color:var(--ink);outline:none}
+.field input:focus,.field select:focus{border-color:var(--link);box-shadow:0 0 0 3px rgba(0,112,243,.12)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;
+  padding:10px 18px;border-radius:6px;font-size:13px;z-index:60;box-shadow:var(--shadow-md)}
+
+@media(max-width:1100px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .card-grid{grid-template-columns:repeat(2,1fr)}
+  .card.span-2{grid-column:span 2}
+  .card.span-3{grid-column:span 2}
+}
+@media(max-width:760px){
+  .sidebar{width:56px;padding:20px 6px}
+  .brand span:last-child,.nav-item,.side-foot{font-size:0}
+  .brand{justify-content:center;padding:0 0 24px}
+  .nav-item{text-align:center;padding:12px 0}
+  .nav-item::first-letter{font-size:14px}
+  .main{padding:20px 16px}
+  .kpi-grid,.card-grid{grid-template-columns:1fr}
+  .card.span-2,.card.span-3{grid-column:span 1}
+  .space-grid{grid-template-columns:repeat(8,1fr)}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">◇</span><span>SmartPark</span></div>
+    <nav class="nav" id="nav">
+      <button class="nav-item active" data-view="overview">概览</button>
+      <button class="nav-item" data-view="equipment">设施设备</button>
+      <button class="nav-item" data-view="repair">报修工单</button>
+      <button class="nav-item" data-view="revenue">收入分析</button>
+      <button class="nav-item" data-view="parking">车位使用</button>
+    </nav>
+    <div class="side-foot">运维工作台<br><span id="today-label"></span></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="page-title">运营概览</h1>
+        <p class="subtitle" id="page-sub">设施设备与停车收入，一屏掌握</p>
+      </div>
+      <div class="top-actions" id="top-actions"></div>
+    </header>
+
+    <section class="view" id="view-overview">
+      <div class="kpi-grid" id="kpi-grid"></div>
+      <div class="card-grid">
+        <div class="card span-2">
+          <div class="card-head"><h2>近 14 天收入趋势</h2><span class="tag">单位：元</span></div>
+          <div id="chart-revenue-line" class="chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>设备状态</h2></div>
+          <div id="chart-equipment-donut" class="chart"></div>
+          <div id="equip-legend" class="legend"></div>
+        </div>
+        <div class="card span-2">
+          <div class="card-head"><h2>车位使用概览</h2><span class="tag">近 7 日逐小时平均</span></div>
+          <div id="chart-overview-parking" class="chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>待办提醒</h2></div>
+          <div id="todo-list" class="todo-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-equipment">
+      <div class="filterbar" id="equipment-filter"></div>
+      <div class="card table-card"><div id="equipment-table"></div></div>
+    </section>
+
+    <section class="view hidden" id="view-repair">
+      <div class="filterbar" id="repair-filter"></div>
+      <div class="card table-card"><div id="repair-table"></div></div>
+    </section>
+
+    <section class="view hidden" id="view-revenue">
+      <div class="segmented" id="revenue-mode">
+        <button class="seg active" data-mode="daily">按日</button>
+        <button class="seg" data-mode="monthly">按月</button>
+      </div>
+      <div class="card-grid">
+        <div class="card span-2">
+          <div class="card-head"><h2 id="trend-title">收入趋势</h2><span class="tag" id="trend-tag"></span></div>
+          <div id="chart-trend" class="chart tall"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>收入来源构成</h2></div>
+          <div id="chart-source-donut" class="chart"></div>
+          <div id="source-legend" class="legend"></div>
+        </div>
+        <div class="card span-2">
+          <div class="card-head"><h2>各来源订单量</h2><span class="tag">近 90 天合计</span></div>
+          <div id="chart-source-orders" class="chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>关键指标</h2></div>
+          <div id="revenue-stats" class="stat-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view hidden" id="view-parking">
+      <div class="kpi-grid" id="parking-kpi"></div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><h2>车位使用构成</h2><span class="tag">近 7 日平均</span></div>
+          <div id="chart-parking-donut" class="chart"></div>
+          <div id="parking-donut-legend" class="legend"></div>
+        </div>
+        <div class="card span-2">
+          <div class="card-head"><h2>逐小时车位使用情况</h2><span class="tag">近 7 日同一时段平均</span></div>
+          <div id="chart-occupancy" class="chart"></div>
+          <div id="occupancy-legend" class="legend"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>车位概况</h2></div>
+          <div id="parking-stats" class="stat-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>时段摘要</h2></div>
+          <div id="parking-hour-stats" class="stat-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>周转口径</h2></div>
+          <div id="parking-method" class="stat-list"></div>
+        </div>
+        <div class="card span-3">
+          <div class="card-head"><h2>车位明细</h2><span class="tag" id="space-day-tag"></span></div>
+          <div class="filterbar">
+            <span>时段</span>
+            <select id="space-hour" aria-label="选择时段"></select>
+            <span class="space-summary" id="space-summary"></span>
+          </div>
+          <div id="space-grid" class="space-grid"></div>
+          <div id="space-legend" class="legend"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-wrap hidden" id="modal-wrap">
+  <div class="modal">
+    <div class="modal-head"><h2 id="modal-title">新建报修</h2><button class="icon-btn" id="modal-close">×</button></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+<div id="toast" class="toast hidden"></div>
+<script>
+/* SmartPark 工作台：数据请求 + 手写 SVG 图表 */
+const $ = (s) => document.querySelector(s);
+const fmt = (n) => '¥' + Number(n).toLocaleString('zh-CN', {maximumFractionDigits: 0});
+const fmt1 = (n) => '¥' + Number(n).toLocaleString('zh-CN', {maximumFractionDigits: 1});
+const shortDay = (d) => d.slice(5).replace('-', '/');
+// Vercel / Geist 语义色阶：蓝、绿、琥珀、紫、青、红
+const COLORS = ['#0070f3', '#17c964', '#f5a623', '#7928ca', '#00b8d9', '#ee0000'];
+let state = { equipment: [], repairs: [], revenueMode: 'daily', daily: [], monthly: [], spaceHour: new Date().getHours() };
+
+
+/* 静态版数据层：数据内联，改动存 localStorage */
+const SEED = {"equipment":[{"id":1,"code":"PK-001","name":"停车场 道闸 1","category":"道闸","lot":"停车场","status":"正常","installed_on":"2025-02-07","last_check_on":"2026-10-26","note":"巡检记录正常"},{"id":2,"code":"PK-002","name":"停车场 道闸 2","category":"道闸","lot":"停车场","status":"正常","installed_on":"2025-12-17","last_check_on":"2026-10-05","note":"巡检记录正常"},{"id":3,"code":"PK-003","name":"停车场 道闸 3","category":"道闸","lot":"停车场","status":"待保养","installed_on":"2026-04-06","last_check_on":"2026-09-21","note":"排期中"},{"id":4,"code":"PK-004","name":"停车场 摄像头 1","category":"摄像头","lot":"停车场","status":"正常","installed_on":"2026-03-08","last_check_on":"2026-09-25","note":"巡检记录正常"},{"id":5,"code":"PK-005","name":"停车场 摄像头 2","category":"摄像头","lot":"停车场","status":"待保养","installed_on":"2025-12-13","last_check_on":"2026-09-23","note":"排期中"},{"id":6,"code":"PK-006","name":"停车场 摄像头 3","category":"摄像头","lot":"停车场","status":"正常","installed_on":"2025-08-19","last_check_on":"2026-11-09","note":"巡检记录正常"},{"id":7,"code":"PK-007","name":"停车场 充电桩 1","category":"充电桩","lot":"停车场","status":"正常","installed_on":"2025-01-09","last_check_on":"2026-10-31","note":"巡检记录正常"},{"id":8,"code":"PK-008","name":"停车场 充电桩 2","category":"充电桩","lot":"停车场","status":"故障","installed_on":"2026-05-30","last_check_on":"2026-11-12","note":"待厂家处理"},{"id":9,"code":"PK-009","name":"停车场 充电桩 3","category":"充电桩","lot":"停车场","status":"正常","installed_on":"2024-12-10","last_check_on":"2026-09-22","note":"巡检记录正常"},{"id":10,"code":"PK-010","name":"停车场 车位引导屏 1","category":"车位引导屏","lot":"停车场","status":"正常","installed_on":"2025-07-11","last_check_on":"2026-10-30","note":"巡检记录正常"},{"id":11,"code":"PK-011","name":"停车场 车位引导屏 2","category":"车位引导屏","lot":"停车场","status":"正常","installed_on":"2025-07-13","last_check_on":"2026-10-27","note":"巡检记录正常"},{"id":12,"code":"PK-012","name":"停车场 车位引导屏 3","category":"车位引导屏","lot":"停车场","status":"故障","installed_on":"2025-01-09","last_check_on":"2026-10-13","note":"待厂家处理"},{"id":13,"code":"PK-013","name":"停车场 照明 1","category":"照明","lot":"停车场","status":"待保养","installed_on":"2025-11-30","last_check_on":"2026-10-23","note":"排期中"},{"id":14,"code":"PK-014","name":"停车场 照明 2","category":"照明","lot":"停车场","status":"正常","installed_on":"2024-07-07","last_check_on":"2026-10-24","note":"巡检记录正常"},{"id":15,"code":"PK-015","name":"停车场 照明 3","category":"照明","lot":"停车场","status":"正常","installed_on":"2024-11-03","last_check_on":"2026-09-25","note":"巡检记录正常"},{"id":16,"code":"PK-016","name":"停车场 电梯 1","category":"电梯","lot":"停车场","status":"正常","installed_on":"2025-09-03","last_check_on":"2026-09-27","note":"巡检记录正常"},{"id":17,"code":"PK-017","name":"停车场 电梯 2","category":"电梯","lot":"停车场","status":"正常","installed_on":"2025-03-20","last_check_on":"2026-10-26","note":"巡检记录正常"},{"id":18,"code":"PK-018","name":"停车场 电梯 3","category":"电梯","lot":"停车场","status":"待保养","installed_on":"2024-10-07","last_check_on":"2026-10-27","note":"排期中"}],"repairs":[{"id":5,"equipment_id":8,"title":"停车场 充电桩 2：充电枪无法识别","priority":"低","status":"待处理","reporter":"值班员-张","created_on":"2026-11-20","resolved_on":null,"handler":"","equipment_code":"PK-008"},{"id":4,"equipment_id":7,"title":"停车场 充电桩 1：充电枪无法识别","priority":"高","status":"待处理","reporter":"值班员-李","created_on":"2026-11-20","resolved_on":null,"handler":"","equipment_code":"PK-007"},{"id":2,"equipment_id":4,"title":"停车场 摄像头 1：无录像","priority":"高","status":"处理中","reporter":"车主反馈","created_on":"2026-11-20","resolved_on":null,"handler":"维修组-王","equipment_code":"PK-004"},{"id":1,"equipment_id":1,"title":"停车场 道闸 1：读卡无响应","priority":"高","status":"待处理","reporter":"值班员-张","created_on":"2026-11-19","resolved_on":null,"handler":"","equipment_code":"PK-001"},{"id":8,"equipment_id":13,"title":"停车场 照明 1：灯具不亮","priority":"高","status":"已完成","reporter":"车主反馈","created_on":"2026-11-15","resolved_on":"2026-11-19","handler":"维修组-王","equipment_code":"PK-013"},{"id":6,"equipment_id":10,"title":"停车场 车位引导屏 1：闪烁","priority":"中","status":"已完成","reporter":"车主反馈","created_on":"2026-11-13","resolved_on":"2026-11-17","handler":"维修组-王","equipment_code":"PK-010"},{"id":7,"equipment_id":12,"title":"停车场 车位引导屏 3：闪烁","priority":"低","status":"处理中","reporter":"值班员-李","created_on":"2026-11-12","resolved_on":null,"handler":"维修组-王","equipment_code":"PK-012"},{"id":3,"equipment_id":5,"title":"停车场 摄像头 2：画面模糊","priority":"中","status":"处理中","reporter":"车主反馈","created_on":"2026-11-11","resolved_on":null,"handler":"维修组-王","equipment_code":"PK-005"}],"daily":[{"day":"2026-08-23","amount":18731.81,"orders":165},{"day":"2026-08-24","amount":24165.04,"orders":207},{"day":"2026-08-25","amount":22901.31,"orders":202},{"day":"2026-08-26","amount":25092.36,"orders":200},{"day":"2026-08-27","amount":23213.35,"orders":189},{"day":"2026-08-28","amount":23639.11,"orders":205},{"day":"2026-08-29","amount":18532.64,"orders":154},{"day":"2026-08-30","amount":17036.4,"orders":140},{"day":"2026-08-31","amount":24832.31,"orders":200},{"day":"2026-09-01","amount":22625.95,"orders":181},{"day":"2026-09-02","amount":24950.36,"orders":195},{"day":"2026-09-03","amount":24299.48,"orders":205},{"day":"2026-09-04","amount":24913.18,"orders":210},{"day":"2026-09-05","amount":21181.67,"orders":168},{"day":"2026-09-06","amount":20701.35,"orders":169},{"day":"2026-09-07","amount":26518.43,"orders":220},{"day":"2026-09-08","amount":24280.05,"orders":209},{"day":"2026-09-09","amount":27051.61,"orders":219},{"day":"2026-09-10","amount":21077.33,"orders":177},{"day":"2026-09-11","amount":26200.64,"orders":215},{"day":"2026-09-12","amount":17930.68,"orders":146},{"day":"2026-09-13","amount":19146.68,"orders":156},{"day":"2026-09-14","amount":23098.03,"orders":197},{"day":"2026-09-15","amount":26749.37,"orders":221},{"day":"2026-09-16","amount":22709.12,"orders":197},{"day":"2026-09-17","amount":23638.62,"orders":206},{"day":"2026-09-18","amount":23496.64,"orders":197},{"day":"2026-09-19","amount":20826.43,"orders":165},{"day":"2026-09-20","amount":17690.02,"orders":154},{"day":"2026-09-21","amount":23316.35,"orders":200},{"day":"2026-09-22","amount":26184.0,"orders":206},{"day":"2026-09-23","amount":26367.76,"orders":208},{"day":"2026-09-24","amount":22435.6,"orders":177},{"day":"2026-09-25","amount":25580.21,"orders":207},{"day":"2026-09-26","amount":20957.54,"orders":173},{"day":"2026-09-27","amount":19268.82,"orders":156},{"day":"2026-09-28","amount":24123.78,"orders":190},{"day":"2026-09-29","amount":22687.36,"orders":196},{"day":"2026-09-30","amount":22222.04,"orders":193},{"day":"2026-10-01","amount":21530.22,"orders":187},{"day":"2026-10-02","amount":23496.52,"orders":200},{"day":"2026-10-03","amount":18850.43,"orders":166},{"day":"2026-10-04","amount":20334.12,"orders":170},{"day":"2026-10-05","amount":22863.26,"orders":189},{"day":"2026-10-06","amount":23891.83,"orders":201},{"day":"2026-10-07","amount":22402.7,"orders":198},{"day":"2026-10-08","amount":23717.67,"orders":200},{"day":"2026-10-09","amount":26109.14,"orders":217},{"day":"2026-10-10","amount":19941.35,"orders":159},{"day":"2026-10-11","amount":19280.56,"orders":158},{"day":"2026-10-12","amount":22575.17,"orders":195},{"day":"2026-10-13","amount":25275.29,"orders":203},{"day":"2026-10-14","amount":22053.47,"orders":186},{"day":"2026-10-15","amount":23460.51,"orders":206},{"day":"2026-10-16","amount":24161.6,"orders":197},{"day":"2026-10-17","amount":18204.05,"orders":149},{"day":"2026-10-18","amount":19758.39,"orders":166},{"day":"2026-10-19","amount":24978.89,"orders":211},{"day":"2026-10-20","amount":21862.2,"orders":184},{"day":"2026-10-21","amount":23913.95,"orders":192},{"day":"2026-10-22","amount":24538.89,"orders":189},{"day":"2026-10-23","amount":22842.27,"orders":194},{"day":"2026-10-24","amount":18466.49,"orders":147},{"day":"2026-10-25","amount":18849.19,"orders":171},{"day":"2026-10-26","amount":25288.82,"orders":210},{"day":"2026-10-27","amount":24848.6,"orders":196},{"day":"2026-10-28","amount":23224.05,"orders":191},{"day":"2026-10-29","amount":25477.32,"orders":205},{"day":"2026-10-30","amount":25042.92,"orders":207},{"day":"2026-10-31","amount":17321.82,"orders":152},{"day":"2026-11-01","amount":19911.78,"orders":162},{"day":"2026-11-02","amount":21653.23,"orders":180},{"day":"2026-11-03","amount":25612.68,"orders":208},{"day":"2026-11-04","amount":24531.56,"orders":221},{"day":"2026-11-05","amount":25688.47,"orders":202},{"day":"2026-11-06","amount":24388.08,"orders":198},{"day":"2026-11-07","amount":19055.59,"orders":156},{"day":"2026-11-08","amount":17785.17,"orders":147},{"day":"2026-11-09","amount":26254.26,"orders":210},{"day":"2026-11-10","amount":23605.38,"orders":195},{"day":"2026-11-11","amount":24880.71,"orders":208},{"day":"2026-11-12","amount":22949.17,"orders":193},{"day":"2026-11-13","amount":22856.05,"orders":203},{"day":"2026-11-14","amount":17631.56,"orders":151},{"day":"2026-11-15","amount":21234.22,"orders":176},{"day":"2026-11-16","amount":24107.69,"orders":191},{"day":"2026-11-17","amount":26537.84,"orders":222},{"day":"2026-11-18","amount":24068.69,"orders":208},{"day":"2026-11-19","amount":23008.78,"orders":197},{"day":"2026-11-20","amount":21834.85,"orders":183}],"monthly":[{"month":"2026-08","amount":198144.33,"orders":1662},{"month":"2026-09","amount":692229.1,"orders":5713},{"month":"2026-10","amount":694561.69,"orders":5796},{"month":"2026-11","amount":457595.76,"orders":3811}],"sources":[{"source":"月租","amount":1002242.74,"orders":3758},{"source":"临停","amount":567576.67,"orders":8194},{"source":"会员","amount":285172.84,"orders":2219},{"source":"充电","amount":187538.63,"orders":2811}],"turnover":[{"lot":"停车场","spaces":144,"days":30,"orders":5673,"avg_daily_orders":189.1,"turnover":1.31}],"occupancyAll":[{"hour":0,"occupied":16.0,"free":128.0,"spaces":144.0,"rate":11.1},{"hour":1,"occupied":13.9,"free":130.1,"spaces":144.0,"rate":9.6},{"hour":2,"occupied":12.7,"free":131.3,"spaces":144.0,"rate":8.8},{"hour":3,"occupied":12.9,"free":131.1,"spaces":144.0,"rate":8.9},{"hour":4,"occupied":17.3,"free":126.7,"spaces":144.0,"rate":12.0},{"hour":5,"occupied":32.0,"free":112.0,"spaces":144.0,"rate":22.2},{"hour":6,"occupied":58.6,"free":85.4,"spaces":144.0,"rate":40.7},{"hour":7,"occupied":85.7,"free":58.3,"spaces":144.0,"rate":59.5},{"hour":8,"occupied":109.1,"free":34.9,"spaces":144.0,"rate":75.8},{"hour":9,"occupied":135.6,"free":8.4,"spaces":144.0,"rate":94.1},{"hour":10,"occupied":136.7,"free":7.3,"spaces":144.0,"rate":94.9},{"hour":11,"occupied":132.1,"free":11.9,"spaces":144.0,"rate":91.8},{"hour":12,"occupied":119.4,"free":24.6,"spaces":144.0,"rate":82.9},{"hour":13,"occupied":119.0,"free":25.0,"spaces":144.0,"rate":82.6},{"hour":14,"occupied":129.1,"free":14.9,"spaces":144.0,"rate":89.7},{"hour":15,"occupied":136.4,"free":7.6,"spaces":144.0,"rate":94.7},{"hour":16,"occupied":137.9,"free":6.1,"spaces":144.0,"rate":95.7},{"hour":17,"occupied":141.6,"free":2.4,"spaces":144.0,"rate":98.3},{"hour":18,"occupied":137.3,"free":6.7,"spaces":144.0,"rate":95.3},{"hour":19,"occupied":105.3,"free":38.7,"spaces":144.0,"rate":73.1},{"hour":20,"occupied":82.7,"free":61.3,"spaces":144.0,"rate":57.4},{"hour":21,"occupied":59.1,"free":84.9,"spaces":144.0,"rate":41.1},{"hour":22,"occupied":41.3,"free":102.7,"spaces":144.0,"rate":28.7},{"hour":23,"occupied":28.6,"free":115.4,"spaces":144.0,"rate":19.8}]};
+const STORE_KEY = 'smartpark_workbench_v4';
+const TODAY = "2026-11-20";
+function loadDB(){
+  try { const s = JSON.parse(localStorage.getItem(STORE_KEY)); if (s && s.equipment && s.repairs && s.turnover && s.occupancyAll) return s; } catch(e){}
+  return JSON.parse(JSON.stringify(SEED));
+}
+let DB = loadDB();
+function saveDB(){ localStorage.setItem(STORE_KEY, JSON.stringify(DB)); }
+function spaceHash(text){
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+async function api(path){
+  const u = new URL(path, 'http://local');
+  const p = u.pathname, q = u.searchParams;
+  if (p === '/api/overview') {
+    const eq = {}; DB.equipment.forEach(e => eq[e.status] = (eq[e.status]||0)+1);
+    const today = TODAY, month = today.slice(0,7);
+    const td = DB.daily.find(d => d.day === today) || {amount:0,orders:0};
+    const revMonth = DB.monthly.find(m => m.month === month);
+    return {revenue_today: td.amount, orders_today: td.orders,
+      revenue_month: revMonth ? revMonth.amount : DB.monthly[DB.monthly.length-1].amount,
+      equipment: eq, equipment_total: DB.equipment.length,
+      repair_open: DB.repairs.filter(r => r.status !== '已完成').length};
+  }
+  if (p === '/api/equipment') {
+    let a = DB.equipment;
+    if (q.get('status')) a = a.filter(e => e.status === q.get('status'));
+    if (q.get('category')) a = a.filter(e => e.category === q.get('category'));
+    return a.map(e => ({...e}));
+  }
+  if (p === '/api/repair') {
+    let a = DB.repairs;
+    if (q.get('status')) a = a.filter(r => r.status === q.get('status'));
+    return a.map(r => ({...r}));
+  }
+  if (p === '/api/revenue/daily') { const n = Number(q.get('days')||90); return DB.daily.slice(-n).map(d => ({...d})); }
+  if (p === '/api/revenue/monthly') return DB.monthly.map(m => ({...m}));
+  if (p === '/api/revenue/sources') return DB.sources.map(s => ({...s}));
+  if (p === '/api/parking/turnover') return DB.turnover.map(t => ({...t}));
+  if (p === '/api/parking/occupancy') return DB.occupancyAll.map(h => ({...h}));
+  if (p === '/api/parking/spaces') {
+    const hour = Number(q.get('hour')||9);
+    const spaces = DB.turnover[0].spaces;
+    const counts = DB.occupancyAll.map(x => Math.round(x.occupied));
+    const sets = [];
+    for (let hh = 0; hh < 24; hh++) {
+      const ranked = Array.from({length:spaces},(_,i)=>i+1).sort((a,b)=>
+        spaceHash(TODAY+'|'+hh+'|'+a+'|smartpark') - spaceHash(TODAY+'|'+hh+'|'+b+'|smartpark'));
+      sets.push(new Set(ranked.slice(0, counts[hh])));
+    }
+    const items = [];
+    for (let no = 1; no <= spaces; no++) {
+      const zi = Math.min(2, Math.floor((no - 1) * 3 / spaces));
+      let used = 0;
+      for (let hh = 0; hh < 24; hh++) if (sets[hh].has(no)) used++;
+      items.push({no, code: 'ABC'[zi] + '-' + String((no - 1) % 48 + 1).padStart(2,'0'),
+        zone: 'ABC'[zi] + '区', occupied: sets[hour].has(no), used_hours: used});
+    }
+    return {day: TODAY, hour, spaces, occupied: sets[hour].size, free: spaces - sets[hour].size, items};
+  }
+  return null;
+}
+async function post(path, body){
+  if (path === '/api/equipment') {
+    const code = 'NEW-' + String(DB.equipment.length+1).padStart(3,'0');
+    const today = new Date().toISOString().slice(0,10);
+    const e = {id: Math.max(0,...DB.equipment.map(x=>x.id))+1, code, name:body.name,
+      category:body.category, lot:"\u505c\u8f66\u573a", status:body.status, installed_on:today,
+      last_check_on:today, note:''};
+    DB.equipment.push(e); saveDB(); return e;
+  }
+  if (path === '/api/repair') {
+    const r = {id: Math.max(0,...DB.repairs.map(x=>x.id))+1, equipment_id:body.equipment_id,
+      title:body.title, priority:body.priority, status:'待处理', reporter:body.reporter,
+      created_on:new Date().toISOString().slice(0,10), resolved_on:null, handler:'',
+      equipment_code: (DB.equipment.find(e=>e.id===body.equipment_id)||{}).code || ''};
+    DB.repairs.unshift(r); saveDB(); return r;
+  }
+}
+async function patch(path, body){
+  const id = Number(path.split('/').pop());
+  if (path.startsWith('/api/equipment')) {
+    const e = DB.equipment.find(x=>x.id===id); if(!e) throw new Error('设备不存在');
+    e.status = body.status; e.last_check_on = new Date().toISOString().slice(0,10);
+    saveDB(); return {...e};
+  }
+  if (path.startsWith('/api/repair')) {
+    const r = DB.repairs.find(x=>x.id===id); if(!r) throw new Error('工单不存在');
+    r.status = body.status; r.resolved_on = body.status==='已完成' ? new Date().toISOString().slice(0,10) : null;
+    saveDB(); return {...r};
+  }
+}
+
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.add('hidden'), 2200);
+}
+
+/* ---------- SVG 图表 ---------- */
+function lineChart(el, points, opts = {}) {
+  const w = opts.width || 720, h = opts.height || 230;
+  const pad = {l: 56, r: 16, t: 16, b: 30};
+  const iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+  if (!points.length) { el.innerHTML = '<p class="subtitle">暂无数据</p>'; return; }
+  const vals = points.map(p => p.v);
+  const max = Math.max(...vals, 1) * 1.15, min = 0;
+  const x = (i) => pad.l + (points.length === 1 ? iw / 2 : i * iw / (points.length - 1));
+  const y = (v) => pad.t + ih - (v - min) / (max - min) * ih;
+  let grid = '';
+  for (let i = 0; i <= 4; i++) {
+    const gy = pad.t + ih * i / 4;
+    grid += `<line class="grid-line" x1="${pad.l}" y1="${gy}" x2="${w - pad.r}" y2="${gy}"/>`;
+    grid += `<text class="axis-text" x="${pad.l - 8}" y="${gy + 3}" text-anchor="end">${Math.round(max * (4 - i) / 4 / 1000)}k</text>`;
+  }
+  const d = points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+  const area = d + ` L${x(points.length - 1).toFixed(1)},${pad.t + ih} L${x(0).toFixed(1)},${pad.t + ih} Z`;
+  const step = Math.max(1, Math.ceil(points.length / 8));
+  let labels = '';
+  points.forEach((p, i) => {
+    if (i % step === 0 || i === points.length - 1)
+      labels += `<text class="axis-text" x="${x(i).toFixed(1)}" y="${h - 8}" text-anchor="middle">${p.label}</text>`;
+  });
+  let dots = '';
+  points.forEach((p, i) => {
+    if (points.length <= 16 || i % step === 0 || i === points.length - 1)
+      dots += `<circle class="dot" cx="${x(i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="3.5" fill="${opts.color || COLORS[0]}"><title>${p.label}：${fmt1(p.v)}</title></circle>`;
+  });
+  el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img">${grid}
+    <path d="${area}" fill="${opts.color || COLORS[0]}" opacity="0.07"/>
+    <path class="line-path" d="${d}" stroke="${opts.color || COLORS[0]}"/>
+    ${dots}${labels}</svg>`;
+}
+
+function donutChart(el, items, opts = {}) {
+  const total = items.reduce((s, i) => s + i.v, 0) || 1;
+  const cx = 110, cy = 110, r = 76, sw = 26, w = 220, h = 220;
+  let acc = 0;
+  let arcs = '';
+  items.forEach((it, i) => {
+    const color = it.color || COLORS[i % COLORS.length];
+    const tip = opts.unit ? `${it.v}${opts.unit}` : fmt1(it.v);
+    const frac = it.v / total;
+    const a0 = acc * Math.PI * 2 - Math.PI / 2;
+    acc += frac;
+    const a1 = acc * Math.PI * 2 - Math.PI / 2;
+    const large = frac > .5 ? 1 : 0;
+    const p0 = [cx + r * Math.cos(a0), cy + r * Math.sin(a0)];
+    const p1 = [cx + r * Math.cos(a1), cy + r * Math.sin(a1)];
+    if (frac >= 0.9999) {
+      arcs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}"><title>${it.label}：${tip}</title></circle>`;
+    } else {
+      arcs += `<path d="M ${p0[0].toFixed(2)} ${p0[1].toFixed(2)} A ${r} ${r} 0 ${large} 1 ${p1[0].toFixed(2)} ${p1[1].toFixed(2)}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="butt"><title>${it.label}：${tip}</title></path>`;
+    }
+  });
+  const center = opts.center || fmt(total);
+  el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img">${arcs}
+    <text x="${cx}" y="${cy - 4}" text-anchor="middle" font-size="12" fill="#888888">${opts.centerLabel || '合计'}</text>
+    <text x="${cx}" y="${cy + 18}" text-anchor="middle" font-size="19" font-weight="600" fill="#171717">${center}</text></svg>`;
+}
+
+function barChart(el, items, opts = {}) {
+  const w = opts.width || 720, h = opts.height || 200;
+  const pad = {l: 66, r: 18, t: 12, b: 30};
+  const iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+  const max = Math.max(...items.map(i => i.v), 1) * 1.12;
+  const rowH = ih / items.length;
+  const barH = Math.min(22, rowH * .5);
+  const label = (v) => opts.suffix ? Number(v).toFixed(opts.decimals ?? 0) + opts.suffix : fmt(v);
+  const tip = (v) => opts.suffix ? Number(v).toFixed(1) + opts.suffix : fmt1(v);
+  let rows = '';
+  items.forEach((it, i) => {
+    const cy = pad.t + rowH * i + rowH / 2;
+    const bw = it.v / max * iw;
+    rows += `<text class="axis-text" x="${pad.l - 10}" y="${cy + 4}" text-anchor="end">${it.label}</text>`;
+    rows += `<rect class="bar" x="${pad.l}" y="${cy - barH / 2}" width="${Math.max(bw, 2)}" height="${barH}" rx="${barH / 2}" fill="${it.color || COLORS[i % COLORS.length]}"><title>${it.label}：${tip(it.v)}</title></rect>`;
+    rows += `<text class="axis-text" x="${pad.l + bw + 8}" y="${cy + 4}" fill="#4d4d4d">${label(it.v)}</text>`;
+  });
+  el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img">${rows}</svg>`;
+}
+
+function occupancyChart(el, rows) {
+  if (!rows.length) { el.innerHTML = '<p class="subtitle">暂无数据</p>'; return; }
+  const w = 900, h = 260, pad = {l: 46, r: 12, t: 20, b: 34};
+  const iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+  const max = Math.max(...rows.map(r => r.spaces), 1) * 1.05;
+  const y = (v) => pad.t + ih - v / max * ih;
+  const slot = iw / rows.length, bw = Math.min(26, slot * 0.62);
+  const peak = Math.max(...rows.map(r => r.rate));
+  let grid = '';
+  for (let i = 0; i <= 4; i++) {
+    const gy = pad.t + ih * i / 4;
+    grid += `<line class="grid-line" x1="${pad.l}" y1="${gy}" x2="${w - pad.r}" y2="${gy}"/>`;
+    grid += `<text class="axis-text" x="${pad.l - 8}" y="${gy + 3}" text-anchor="end">${Math.round(max * (4 - i) / 4)}</text>`;
+  }
+  let bars = '', labels = '';
+  rows.forEach((r, i) => {
+    const cx = pad.l + slot * (i + 0.5), x = cx - bw / 2;
+    const yo = y(r.occupied), ys = y(r.spaces), y0 = y(0);
+    const color = r.rate === peak ? COLORS[2] : COLORS[0];
+    const tip = `${String(i).padStart(2, '0')}:00-${String((i + 1) % 24).padStart(2, '0')}:00｜占用 ${r.occupied} 位 · 空闲 ${r.free} 位 · 占用率 ${r.rate}%`;
+    bars += `<rect x="${x.toFixed(1)}" y="${yo.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(y0 - yo, 0).toFixed(1)}" rx="2" fill="${color}"><title>${tip}</title></rect>`;
+    bars += `<rect x="${x.toFixed(1)}" y="${ys.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(yo - ys, 0).toFixed(1)}" rx="2" fill="#ebebeb"><title>${tip}</title></rect>`;
+    bars += `<text class="axis-text" x="${cx.toFixed(1)}" y="${(ys - 5).toFixed(1)}" text-anchor="middle">${Math.round(r.rate)}%</text>`;
+    if (i % 2 === 0)
+      labels += `<text class="axis-text" x="${cx.toFixed(1)}" y="${h - 10}" text-anchor="middle">${String(i).padStart(2, '0')}</text>`;
+  });
+  el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img">${grid}${bars}${labels}</svg>`;
+}
+
+/* ---------- 概览 ---------- */
+async function loadOverview() {
+  const [k, daily, hours] = await Promise.all([
+    api('/api/overview'), api('/api/revenue/daily?days=14'), api('/api/parking/occupancy?days=7')
+  ]);
+  const eq = k.equipment || {};
+  const cards = [
+    {label: '今日收入', value: fmt(k.revenue_today), foot: `今日订单 ${k.orders_today} 单`, color: COLORS[0]},
+    {label: '本月收入', value: fmt(k.revenue_month), foot: '当月累计，随日期更新', color: COLORS[1]},
+    {label: '设备在线率', value: Math.round((eq['正常'] || 0) / k.equipment_total * 100) + '%',
+     foot: `共 ${k.equipment_total} 台 · 故障 ${eq['故障'] || 0} 台`, color: COLORS[2]},
+    {label: '未结报修', value: k.repair_open, foot: '待处理 + 处理中', color: COLORS[5]},
+  ];
+  $('#kpi-grid').innerHTML = cards.map(c => `<div class="kpi"><div class="accent" style="background:${c.color}"></div>
+    <div class="label">${c.label}</div><div class="value">${c.value}</div><div class="foot">${c.foot}</div></div>`).join('');
+
+  lineChart($('#chart-revenue-line'), daily.map(d => ({label: shortDay(d.day), v: d.amount})), {height: 230});
+  const eqItems = [
+    {label: '正常', v: eq['正常'] || 0, color: COLORS[1]},
+    {label: '故障', v: eq['故障'] || 0, color: COLORS[5]},
+    {label: '待保养', v: eq['待保养'] || 0, color: COLORS[2]},
+  ].filter(i => i.v > 0);
+  donutChart($('#chart-equipment-donut'), eqItems, {center: k.equipment_total + ' 台', unit: ' 台'});
+  $('#equip-legend').innerHTML = eqItems.map((i, n) => `<div class="legend-row">
+    <span class="legend-swatch" style="background:${i.color}"></span>
+    <span class="name">${i.label}</span><span class="amount">${i.v} 台</span></div>`).join('');
+  occupancyChart($('#chart-overview-parking'), hours);
+
+  const todos = [
+    {text: '设备故障待处理', num: eq['故障'] || 0, color: COLORS[5]},
+    {text: '设备待保养', num: eq['待保养'] || 0, color: COLORS[2]},
+    {text: '报修工单未结', num: k.repair_open, color: COLORS[0]},
+  ];
+  $('#todo-list').innerHTML = todos.map(t => `<div class="todo"><span class="todo-dot" style="background:${t.color}"></span>
+    <span class="todo-text">${t.text}</span><span class="todo-num">${t.num}</span></div>`).join('');
+}
+
+/* ---------- 设施设备 ---------- */
+const statusClass = s => s === '正常' ? 'ok' : s === '故障' ? 'fault' : 'maintain';
+async function loadEquipment() {
+  const params = new URLSearchParams();
+  if (state.eqStatus) params.set('status', state.eqStatus);
+  if (state.eqCat) params.set('category', state.eqCat);
+  const [equipment, allEquipment] = await Promise.all([
+    api('/api/equipment?' + params), api('/api/equipment'),
+  ]);
+  state.equipment = equipment;
+  const cats = [...new Set(allEquipment.map(e => e.category))];
+  $('#equipment-filter').innerHTML =
+    chipGroup('状态', ['', '正常', '故障', '待保养'], state.eqStatus, 'eqStatus') +
+    chipGroup('类别', ['', ...cats], state.eqCat, 'eqCat');
+  bindChips();
+  const rows = state.equipment.map(e => `<tr>
+    <td>${e.code}</td><td>${e.name}</td><td>${e.category}</td>
+    <td><span class="pill ${statusClass(e.status)}">${e.status}</span></td>
+    <td>${e.last_check_on}</td><td>${e.note || '—'}</td>
+    <td><select class="row-select" data-id="${e.id}" aria-label="修改状态">
+      ${['正常', '故障', '待保养'].map(s => `<option ${s === e.status ? 'selected' : ''}>${s}</option>`).join('')}
+    </select></td></tr>`).join('');
+  $('#equipment-table').innerHTML = `<table><thead><tr>
+    <th>编号</th><th>名称</th><th>类别</th><th>状态</th><th>最近巡检</th><th>备注</th><th>改状态</th>
+    </tr></thead><tbody>${rows || '<tr><td colspan="7" style="color:var(--muted)">没有符合条件的设备</td></tr>'}</tbody></table>`;
+  $('#equipment-table').querySelectorAll('.row-select').forEach(sel => {
+    sel.onchange = async () => {
+      try { await patch('/api/equipment/' + sel.dataset.id, {status: sel.value}); toast('设备状态已更新'); loadEquipment(); }
+      catch (e) { toast(e.message); }
+    };
+  });
+}
+
+function chipGroup(label, values, current, key) {
+  return `<span style="align-self:center;color:var(--muted);font-size:12px;margin-right:2px">${label}</span>` +
+    values.map(v => `<button class="choice ${current === v ? 'active' : ''}" data-key="${key}" data-value="${v}">${v || '全部'}</button>`).join('');
+}
+function bindChips() {
+  document.querySelectorAll('.choice').forEach(b => b.onclick = () => {
+    state[b.dataset.key] = b.dataset.value;
+    if (b.dataset.key.startsWith('eq')) loadEquipment(); else loadRepairs();
+  });
+}
+
+/* ---------- 报修工单 ---------- */
+const repairClass = s => s === '已完成' ? 'ok' : s === '处理中' ? 'blue' : 'fault';
+async function loadRepairs() {
+  const params = new URLSearchParams();
+  if (state.repairStatus) params.set('status', state.repairStatus);
+  state.repairs = await api('/api/repair?' + params);
+  $('#repair-filter').innerHTML = chipGroup('状态', ['', '待处理', '处理中', '已完成'], state.repairStatus, 'repairStatus') +
+    '<button class="btn" id="btn-new-repair" style="margin-left:auto">+ 新建报修</button>';
+  bindChips();
+  $('#btn-new-repair').onclick = openRepairModal;
+  const rows = state.repairs.map(r => `<tr>
+    <td>#${String(r.id).padStart(3, '0')}</td><td>${r.title}</td><td>${r.equipment_code || '—'}</td>
+    <td><span class="pill ${r.priority === '高' ? 'red' : 'gray'}">${r.priority}</span></td>
+    <td><span class="pill ${repairClass(r.status)}">${r.status}</span></td>
+    <td>${r.reporter}</td><td>${r.created_on}</td><td>${r.resolved_on || '—'}</td>
+    <td><button class="link-btn" data-id="${r.id}" data-status="${r.status}">推进状态</button></td></tr>`).join('');
+  $('#repair-table').innerHTML = `<table><thead><tr>
+    <th>单号</th><th>问题</th><th>设备编号</th><th>优先级</th><th>状态</th><th>报修人</th>
+    <th>报修日期</th><th>完成日期</th><th>操作</th></tr></thead><tbody>
+    ${rows || '<tr><td colspan="9" style="color:var(--muted)">没有符合条件的工单</td></tr>'}</tbody></table>`;
+  $('#repair-table').querySelectorAll('.link-btn').forEach(b => b.onclick = () => cycleRepair(b));
+}
+
+async function cycleRepair(btn) {
+  const next = {'待处理': '处理中', '处理中': '已完成', '已完成': '待处理'}[btn.dataset.status];
+  try { await patch('/api/repair/' + btn.dataset.id, {status: next}); toast('工单状态：' + next); loadRepairs(); }
+  catch (e) { toast(e.message); }
+}
+
+function openModal(title, html) {
+  $('#modal-title').textContent = title;
+  $('#modal-body').innerHTML = html;
+  $('#modal-wrap').classList.remove('hidden');
+}
+function closeModal() { $('#modal-wrap').classList.add('hidden'); }
+$('#modal-close').onclick = closeModal;
+$('#modal-wrap').onclick = e => { if (e.target.id === 'modal-wrap') closeModal(); };
+
+async function openRepairModal() {
+  if (!state.allEquipment) state.allEquipment = await api('/api/equipment');
+  const opts = state.allEquipment.map(e => `<option value="${e.id}">${e.code} · ${e.name}（${e.status}）</option>`).join('');
+  openModal('新建报修工单', `
+    <div class="field"><label>报修设备</label><select id="f-equipment">${opts}</select></div>
+    <div class="field"><label>问题描述</label><input id="f-title" placeholder="例如：道闸起杆卡顿"></div>
+    <div class="field"><label>优先级</label><select id="f-priority"><option>中</option><option>高</option><option>低</option></select></div>
+    <div class="field"><label>报修人</label><input id="f-reporter" value="值班员"></div>
+    <div class="modal-actions"><button class="btn ghost" id="f-cancel">取消</button><button class="btn" id="f-submit">提交</button></div>`);
+  $('#f-cancel').onclick = closeModal;
+  $('#f-submit').onclick = async () => {
+    const body = {
+      equipment_id: Number($('#f-equipment').value), title: $('#f-title').value.trim(),
+      priority: $('#f-priority').value, reporter: $('#f-reporter').value.trim() || '值班员'
+    };
+    if (!body.title) { toast('请填写问题描述'); return; }
+    try { await post('/api/repair', body); closeModal(); toast('报修已登记'); loadRepairs(); }
+    catch (e) { toast(e.message); }
+  };
+}
+
+/* ---------- 收入分析 ---------- */
+async function loadRevenue() {
+  if (!state.daily.length) {
+    [state.daily, state.monthly] = await Promise.all([api('/api/revenue/daily?days=90'), api('/api/revenue/monthly')]);
+  }
+  const sources = await api('/api/revenue/sources');
+  const isDaily = state.revenueMode === 'daily';
+  const series = (isDaily ? state.daily : state.monthly).map(d => ({
+    label: isDaily ? shortDay(d.day) : d.month.slice(2), v: d.amount
+  }));
+  $('#trend-title').textContent = isDaily ? '近 90 天每日收入' : '各月份收入';
+  $('#trend-tag').textContent = '单位：元';
+  lineChart($('#chart-trend'), series, {height: 270, color: isDaily ? COLORS[0] : COLORS[1]});
+
+  donutChart($('#chart-source-donut'), sources.map(s => ({label: s.source, v: s.amount})));
+  $('#source-legend').innerHTML = sources.map((s, i) => `<div class="legend-row">
+    <span class="legend-swatch" style="background:${COLORS[i % COLORS.length]}"></span>
+    <span class="name">${s.source}</span><span class="amount">${fmt(s.amount)}</span></div>`).join('');
+
+  barChart($('#chart-source-orders'), sources.map(s => ({label: s.source, v: s.orders})),
+    {height: 190, suffix: ' 单', decimals: 0});
+  const total = sources.reduce((s, x) => s + x.amount, 0);
+  const orders = sources.reduce((s, x) => s + x.orders, 0);
+  const stats = [
+    ['累计收入', fmt(total)], ['累计订单', orders.toLocaleString('zh-CN') + ' 单'],
+    ['平均客单价', fmt(total / orders)], ['收入最高来源', sources[0]?.source || '—']
+  ];
+  $('#revenue-stats').innerHTML = stats.map(s => `<div class="stat"><span class="k">${s[0]}</span><span class="v">${s[1]}</span></div>`).join('');
+}
+
+/* ---------- 车位使用 ---------- */
+async function loadParking() {
+  const [turnover, hours] = await Promise.all([
+    api('/api/parking/turnover?days=30'),
+    api('/api/parking/occupancy?days=7'),
+  ]);
+  const lot = turnover[0] || {lot: '停车场', spaces: 0, orders: 0, turnover: 0};
+  const spaces = lot.spaces, orders = lot.orders;
+  const peak = hours.reduce((a, b) => b.rate > a.rate ? b : a, hours[0]);
+  const low = hours.reduce((a, b) => b.rate < a.rate ? b : a, hours[0]);
+  const avgRate = hours.reduce((s, h) => s + h.rate, 0) / hours.length;
+  const avgOccupied = hours.reduce((s, h) => s + h.occupied, 0) / hours.length;
+  const avgFree = hours.reduce((s, h) => s + h.free, 0) / hours.length;
+  const hourText = (h) => `${String(h).padStart(2, '0')}:00–${String((h + 1) % 24).padStart(2, '0')}:00`;
+
+  const cards = [
+    {label: '日均车位周转率', value: lot.turnover.toFixed(2) + ' 次/日', foot: `近 30 日 ${orders.toLocaleString('zh-CN')} 单 / ${spaces} 位`, color: COLORS[0]},
+    {label: '峰值占用率', value: peak.rate + '%', foot: `${hourText(peak.hour)} · ${Math.round(peak.occupied)} 位在用`, color: COLORS[2]},
+    {label: '最低占用率', value: low.rate + '%', foot: hourText(low.hour), color: COLORS[4]},
+    {label: '平均空闲车位', value: Math.round(avgFree) + ' 位', foot: `近 7 日逐小时平均 · 占用率 ${avgRate.toFixed(1)}%`, color: COLORS[1]},
+  ];
+  $('#parking-kpi').innerHTML = cards.map(c => `<div class="kpi"><div class="accent" style="background:${c.color}"></div>
+    <div class="label">${c.label}</div><div class="value">${c.value}</div><div class="foot">${c.foot}</div></div>`).join('');
+
+  const useItems = [
+    {label: '占用', v: Math.round(avgOccupied), color: COLORS[0]},
+    {label: '空闲', v: Math.round(avgFree), color: '#ebebeb'},
+  ];
+  donutChart($('#chart-parking-donut'), useItems,
+    {center: Math.round(avgOccupied) + ' 位', centerLabel: '平均在用', unit: ' 位'});
+  $('#parking-donut-legend').innerHTML = useItems.map(i => `<div class="legend-row">
+    <span class="legend-swatch" style="background:${i.color}"></span>
+    <span class="name">${i.label}</span><span class="amount">${i.v} 位</span></div>`).join('');
+
+  const stats = [
+    ['停车场', lot.lot], ['车位总数', spaces + ' 位'],
+    ['近 30 日订单', orders.toLocaleString('zh-CN') + ' 单'],
+    ['日均订单', lot.avg_daily_orders + ' 单'],
+  ];
+  $('#parking-stats').innerHTML = stats.map(s => `<div class="stat"><span class="k">${s[0]}</span><span class="v">${s[1]}</span></div>`).join('');
+
+  occupancyChart($('#chart-occupancy'), hours);
+  const legend = [
+    {label: '占用车位', color: COLORS[0]},
+    {label: '空闲车位', color: '#ebebeb'},
+    {label: '高峰时段', color: COLORS[2]},
+  ];
+  $('#occupancy-legend').innerHTML = legend.map(i => `<div class="legend-row">
+    <span class="legend-swatch" style="background:${i.color}"></span><span class="name">${i.label}</span></div>`).join('');
+
+  const hourStats = [
+    ['占用高峰', hourText(peak.hour)],
+    ['高峰占用率', peak.rate + '%'],
+    ['高峰空闲', Math.round(peak.free) + ' 位'],
+    ['最低占用', hourText(low.hour) + ' · ' + low.rate + '%'],
+    ['平均占用率', avgRate.toFixed(1) + '%'],
+  ];
+  $('#parking-hour-stats').innerHTML = hourStats.map(s => `<div class="stat"><span class="k">${s[0]}</span><span class="v">${s[1]}</span></div>`).join('');
+
+  const method = [
+    ['周转率公式', '日均订单 ÷ 车位数'],
+    ['统计周期', '近 30 日'],
+    ['占用数据', '近 7 日同一时段平均'],
+    ['数据性质', '演示数据，非实时'],
+  ];
+  $('#parking-method').innerHTML = method.map(s => `<div class="stat"><span class="k">${s[0]}</span><span class="v">${s[1]}</span></div>`).join('');
+  await loadSpaces();
+}
+
+async function loadSpaces() {
+  const sel = $('#space-hour');
+  if (!sel.options.length) {
+    for (let h = 0; h < 24; h++) sel.add(new Option(`${String(h).padStart(2, '0')}:00–${String((h + 1) % 24).padStart(2, '0')}:00`, h));
+  }
+  sel.value = state.spaceHour;
+  const d = await api('/api/parking/spaces?hour=' + state.spaceHour);
+  const rate = d.spaces ? (d.occupied / d.spaces * 100).toFixed(1) : '0.0';
+  $('#space-day-tag').textContent = `${d.day} · ${sel.options[state.spaceHour].text}`;
+  const freeRate = d.spaces ? (d.free / d.spaces * 100).toFixed(1) : '0.0';
+  $('#space-summary').innerHTML = `占用 <b>${d.occupied}</b> · 空闲 <b>${d.free}</b> · 使用率 <b>${rate}%</b> · 空闲率 <b>${freeRate}%</b>`;
+  $('#space-grid').innerHTML = d.items.map(i => `<div class="space ${i.occupied ? 'occupied' : 'free'}"
+    title="${i.code}｜${i.occupied ? '占用' : '空闲'}｜当日使用 ${i.used_hours} 小时">
+    <span class="no">${i.code}</span><span class="hours">${i.used_hours}h</span></div>`).join('');
+  const legend = [
+    {label: '占用', color: COLORS[0]},
+    {label: '空闲', color: '#ebebeb'},
+  ];
+  $('#space-legend').innerHTML = legend.map(i => `<div class="legend-row">
+    <span class="legend-swatch" style="background:${i.color}"></span><span class="name">${i.label}</span></div>`).join('');
+}
+
+/* ---------- 路由 ---------- */
+const TITLES = {
+  overview: ['运营概览', '设施设备与停车收入，一屏掌握'],
+  equipment: ['设施设备', '台账、状态与巡检记录'],
+  repair: ['报修工单', '登记问题，跟踪处理进度'],
+  revenue: ['收入分析', '日 / 月趋势、来源构成与订单量'],
+  parking: ['车位使用', '车位周转率与逐小时占用情况'],
+};
+async function show(view) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('hidden', v.id !== 'view-' + view));
+  $('#page-title').textContent = TITLES[view][0];
+  $('#page-sub').textContent = TITLES[view][1];
+  $('#top-actions').innerHTML = '';
+  try {
+    if (view === 'overview') await loadOverview();
+    if (view === 'equipment') await loadEquipment();
+    if (view === 'repair') await loadRepairs();
+    if (view === 'revenue') await loadRevenue();
+    if (view === 'parking') await loadParking();
+  } catch (e) { toast(e.message); }
+}
+$('#nav').onclick = e => { const b = e.target.closest('.nav-item'); if (b) show(b.dataset.view); };
+$('#revenue-mode').onclick = e => {
+  const b = e.target.closest('.seg'); if (!b) return;
+  state.revenueMode = b.dataset.mode;
+  document.querySelectorAll('#revenue-mode .seg').forEach(s => s.classList.toggle('active', s === b));
+  loadRevenue();
+};
+$('#space-hour').onchange = e => {
+  state.spaceHour = Number(e.target.value);
+  loadSpaces();
+};
+$('#today-label').textContent = new Date().toLocaleDateString('zh-CN', {year:'numeric', month:'long', day:'numeric'});
+show('overview');
+
+</script>
+</body>
+</html>
