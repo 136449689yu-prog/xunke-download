@@ -140,8 +140,13 @@ footer{text-align:center;color:var(--sub);font-size:12px;margin-top:44px;line-he
   <section class="panel active" id="panel-validator">
     <div class="card">
       <h2>商户营业额真实性核验</h2>
-      <p class="hint">比对 POS、银行、现金三份流水，找出对不上账、整数连报、节假日反常、波动异常的商户。</p>
+      <p class="hint">比对 POS、银行、现金三份流水，找出对不上账、整数连报、节假日反常、波动异常的商户，并按抽成率算出疑似流失金额。</p>
       <div class="uploads" id="up-validator"></div>
+      <div class="actions" style="margin-top:12px">
+        <label style="font-size:13px;color:var(--muted)">抽成率（%）</label>
+        <input type="number" id="commission-rate" value="15" min="0" max="100" step="0.5" style="font:inherit;font-size:13px;padding:7px 10px;width:90px;border:.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)">
+        <span style="font-size:12px;color:var(--muted)">用于把对账缺口折算成预估抽成流失，可按项目改</span>
+      </div>
       <div class="actions">
         <button class="btn primary" data-run="validator">开始核验</button>
         <button class="btn" data-sample="validator">载入示例数据试试</button>
@@ -172,10 +177,16 @@ footer{text-align:center;color:var(--sub);font-size:12px;margin-top:44px;line-he
   <section class="panel" id="panel-report">
     <div class="card">
       <h2>月度 / 季度经营汇报</h2>
-      <p class="hint">整合招商台账、预算实际、物业、活动四份数据，先核口径，再出汇总指标和收入结构。</p>
+      <p class="hint">整合招商台账、预算实际、物业、活动四份数据。先锁口径、核合计，再出指标、结构、汇总表，一键生成汇报文字稿。</p>
       <div class="uploads" id="up-report"></div>
       <div class="actions">
-        <label style="font-size:13px;color:var(--muted)">统计月份</label>
+        <label style="font-size:13px;color:var(--muted)">统计口径</label>
+        <select id="report-scope" style="font:inherit;font-size:13px;padding:7px 10px;border:.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)">
+          <option value="month">单月</option>
+          <option value="quarter">单季度（不混累计）</option>
+          <option value="ytd">本年累计</option>
+        </select>
+        <label style="font-size:13px;color:var(--muted)">截止月份</label>
         <input type="month" id="report-month" style="font:inherit;font-size:13px;padding:7px 10px;border:.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)">
         <button class="btn primary" data-run="report">生成汇报</button>
         <button class="btn" data-sample="report">载入示例数据试试</button>
@@ -235,7 +246,9 @@ const ALIAS={
  '项目ID':'project_id','项目编号':'project_id',
  '日期':'date','金额':'amount','描述':'description','摘要':'description',
  '项目名称':'name','商户名称':'name','费项':'fee_type','费项类型':'fee_type',
- '应缴日期':'due_date','付款状态':'payment_status','联系人':'contact','联系电话':'phone',
+ '应缴日期':'due_date','付款状态':'payment_status','缴费状态':'payment_status','联系人':'contact','联系电话':'phone',
+ '减免':'reduction','减免金额':'reduction','优惠金额':'reduction',
+ '诉讼状态':'litigation_status','诉讼':'litigation_status','是否已诉':'litigation_status',
  '商户类型':'type','类型':'type','预算金额':'budget_amount','实际金额':'actual_amount','差异':'variance',
  '楼栋ID':'building_id','面积':'area','活动名称':'event_name','参与人数':'participants','收入':'revenue',
  '负责人':'manager','付款历史':'payment_history','id':'id','ID':'id'
@@ -359,7 +372,7 @@ const FIELDS={
   collection:[
     {key:'projects',label:'项目信息',req:'id · name · type · manager'},
     {key:'merchants',label:'商户信息',req:'id · name · type · contact · phone · payment_history'},
-    {key:'fees',label:'欠费信息',req:'id · project_id · merchant_id · fee_type · amount · due_date'}
+    {key:'fees',label:'欠费信息',req:'id · project_id · merchant_id · fee_type · amount · due_date · reduction · litigation_status · payment_status（后三项可选）'}
   ],
   report:[
     {key:'lease',label:'招商台账',req:'date · merchant_id · project_id · amount'},
@@ -440,6 +453,15 @@ function detectTrend(rows){
   const std=Math.sqrt(v.reduce((a,b)=>a+(b-mean)**2,0)/v.length);
   return std>mean*0.5?'异常波动：日营业额标准差 '+money(std)+' / 均值 '+money(mean):null;
 }
+/* 逐笔核对：按商户+日期对齐 POS 与银行流水，找差异最大的一天 */
+function findTopGapDay(posRows,bankRows,id){
+  const pm={},bm={};
+  posRows.filter(r=>String(r.merchant_id)===id).forEach(r=>{const d=toDate(r.date);if(d)pm[ymd(d)]=(pm[ymd(d)]||0)+num(r.amount);});
+  bankRows.filter(r=>String(r.merchant_id)===id).forEach(r=>{const d=toDate(r.date);if(d)bm[ymd(d)]=(bm[ymd(d)]||0)+num(r.amount);});
+  let best=null;
+  Object.keys(pm).forEach(k=>{const gap=Math.abs(pm[k]-(bm[k]||0));if(!best||gap>best.gap)best={day:k,gap,gapPct:pm[k]?gap/pm[k]:0};});
+  return best;
+}
 function runValidator(){
   if(!requireData('validator'))return;
   const d=DATA.validator;
@@ -450,46 +472,54 @@ function runValidator(){
   ['pos','bank','cash'].forEach(k=>{
     const m={};d[k].forEach(r=>{const id=String(r.merchant_id);m[id]=(m[id]||0)+num(r.amount);});totals[k]=m;
   });
+  const commission=(num($('#commission-rate').value)||15)/100;
   const rows=[];
   ids.forEach(id=>{
     const p=totals.pos[id]||0,b=totals.bank[id]||0,c=totals.cash[id]||0;
-    let diff=0,level='low',anoms=[];
+    let diff=0,level='low',anoms=[],gapAmt=0,leak=0,top=null;
     if(p>0&&b>0){
       diff=Math.abs(p-b)/Math.max(p,b);
+      gapAmt=Math.abs(p-b);
+      leak=gapAmt*commission;
       if(diff>0.3)level='high';else if(diff>0.15)level='medium';
       const pr=d.pos.filter(r=>String(r.merchant_id)===id);
       [detectInteger(pr),detectHoliday(pr),detectTrend(pr)].forEach(x=>{if(x)anoms.push(x);});
       if(anoms.length&&level==='low')level='medium';
+      top=findTopGapDay(d.pos,d.bank,id);
+      if(top&&top.gapPct>0.3)anoms.push('重点核对日：'+top.day+'（当日缺口 '+money(top.gap)+'）');
     }
-    rows.push({id,pos:p,bank:b,cash:c,diff,level,anoms:anoms.join('；')||'无异常'});
+    rows.push({id,pos:p,bank:b,cash:c,diff,level,gapAmt,leak,topDay:top?top.day:'—',anoms:anoms.join('；')||'无异常'});
   });
   const rank={high:0,medium:1,low:2};
-  rows.sort((a,b)=>rank[a.level]-rank[b.level]||b.diff-a.diff);
-  RESULT.validator=rows;
+  rows.sort((a,b)=>rank[a.level]-rank[b.level]||b.gapAmt-a.gapAmt);
+  RESULT.validator=rows;RESULT.validator.rate=commission;
   const cnt={high:0,medium:0,low:0};rows.forEach(r=>cnt[r.level]++);
-  const top=[...rows].sort((a,b)=>b.diff-a.diff).slice(0,8);
+  const lossAll=rows.reduce((a,r)=>a+r.leak,0),gapAll=rows.reduce((a,r)=>a+r.gapAmt,0);
+  const top=[...rows].sort((a,b)=>b.gapAmt-a.gapAmt).slice(0,8);
   $('#res-validator').innerHTML=
-    '<div class="card"><p class="sec-label">核验结果</p><div class="kpis">'+
+    '<div class="card"><p class="sec-label">核验结果 · 抽成率 '+((commission*100).toFixed(0))+'%</p><div class="kpis">'+
+      kpi('疑似少报流水',money(gapAll),'三源对账缺口合计','red')+
+      kpi('预估抽成流失',money(lossAll),'按当前抽成率测算','red')+
+      kpi('高风险商户',cnt.high,'差异率 > 30%','red')+
       kpi('核验商户',rows.length,'份流水交叉比对','blue')+
-      kpi('高风险',cnt.high,'差异率 > 30%','red')+
-      kpi('中风险',cnt.medium,'含异常模式','orange')+
-      kpi('正常',cnt.low,'差异率 ≤ 15%','green')+
     '</div></div>'+
-    '<div class="card"><p class="sec-label">风险分布与差异排行</p><div class="charts">'+
+    '<div class="card"><p class="sec-label">风险分布与缺口排行</p><div class="charts">'+
       '<div class="chartbox"><div class="ct">风险等级分布</div>'+donutChart([
         {label:'高风险',value:cnt.high,color:'#ff3b30'},
         {label:'中风险',value:cnt.medium,color:'#ff9f0a'},
         {label:'正常',value:cnt.low,color:'#30d158'}])+'</div>'+
-      '<div class="chartbox"><div class="ct">流水差异率 Top 8</div>'+barChart(
-        top.map(r=>({label:r.id,value:r.diff*100,color:r.level==='high'?'#ff3b30':r.level==='medium'?'#ff9f0a':'#0071e3'})),
-        {format:v=>v.toFixed(1)+'%',labelW:96})+'</div>'+
+      '<div class="chartbox"><div class="ct">对账缺口金额 Top 8（元）</div>'+barChart(
+        top.map(r=>({label:r.id,value:r.gapAmt,color:r.level==='high'?'#ff3b30':r.level==='medium'?'#ff9f0a':'#0071e3'})),
+        {format:v=>money(v),labelW:96})+'</div>'+
     '</div></div>'+
-    '<div class="card"><p class="sec-label">可疑商户清单</p>'+tableHTML(rows,[
+    '<div class="card"><p class="sec-label">疑点商户清单 · 可直接拿去逐笔核对</p>'+tableHTML(rows,[
       {key:'id',label:'商户 ID'},
       {key:'pos',label:'POS 营业额',fmt:v=>money(v)},
       {key:'bank',label:'银行流水',fmt:v=>money(v)},
-      {key:'cash',label:'现金流水',fmt:v=>money(v)},
       {key:'diff',label:'差异率',fmt:v=>(v*100).toFixed(1)+'%',tag:r=>r.level},
+      {key:'gapAmt',label:'对账缺口',fmt:v=>money(v)},
+      {key:'leak',label:'预估流失',fmt:v=>money(v)},
+      {key:'topDay',label:'重点核对日'},
       {key:'level',label:'风险等级',fmt:v=>({high:'高',medium:'中',low:'低'})[v],tag:r=>r.level},
       {key:'anoms',label:'异常描述',fmt:v=>esc(v)}
     ])+'</div>';
@@ -543,29 +573,55 @@ function runCollection(){
   d.projects.forEach(r=>pMap[String(r.id)]=r);
   d.merchants.forEach(r=>mMap[String(r.id)]=r);
   const today=new Date(),plan=[];
+  const isPaid=v=>/已缴|已付|paid|complete/i.test(String(v||''));
+  const isLit=v=>/诉讼|起诉|已诉|lawsuit|litigation/i.test(String(v||''));
   d.fees.forEach(f=>{
     const m=mMap[String(f.merchant_id)],p=pMap[String(f.project_id)];
     if(!m||!p)return;
+    const gross=num(f.amount),reduction=num(f.reduction),net=gross-reduction;
+    const paid=isPaid(f.payment_status);
     const dd=toDate(f.due_date),over=dd?Math.max(0,dayDiff(today,dd)):0;
     const tc={A:1.0,B:1.2,C:1.5,D:2.0}[String(m.type||'').toUpperCase()]||1.0;
     const hc=m.payment_history==='good'?0.8:m.payment_history==='normal'?1.0:1.2;
-    const score=(num(f.amount)*0.4+over*0.3)*tc*hc;
+    const score=(net*0.4+over*0.3)*tc*hc;
     const level=score>80000?'high':score>30000?'medium':'low';
-    const action={high:'立即催收，考虑诉讼',medium:'重点催收，密切跟进',low:'常规催收，定期提醒'}[level];
-    plan.push({merchant:m.name,project:p.name,fee:f.fee_type||'—',amount:num(f.amount),days:over,score:Math.round(score),level,action,contact:m.contact||'',phone:m.phone||'',type:m.type||'—'});
+    const lit=isLit(f.litigation_status||m.litigation_status);
+    const action=paid?'已缴清 · 无需催收':lit?'诉讼中 · 走法律程序':({high:'立即催收，考虑诉讼',medium:'重点催收，密切跟进',low:'常规催收，定期提醒'}[level]);
+    const month=dd?String(dd.getFullYear())+'-'+String(dd.getMonth()+1).padStart(2,'0'):'未知';
+    plan.push({merchant:m.name,project:p.name,fee:f.fee_type||'—',gross,reduction,amount:net,days:over,score:Math.round(score),level,action,contact:m.contact||'',phone:m.phone||'',type:m.type||'—',paid,lit,month});
   });
-  plan.sort((a,b)=>b.score-a.score);
-  RESULT.collection=plan;
-  const cnt={high:0,medium:0,low:0};let total=0;
-  plan.forEach(r=>{cnt[r.level]++;total+=r.amount;});
-  const byType={};plan.forEach(r=>{byType[r.type]=(byType[r.type]||0)+r.amount;});
+  plan.sort((a,b)=>(a.paid-b.paid)||(b.score-a.score));
+  RESULT.collection={plan,lit:plan.filter(r=>r.lit)};
+  const open=plan.filter(r=>!r.paid);
+  const cnt={high:0,medium:0,low:0};let total=0,gross=0,reduce=0;
+  open.forEach(r=>{cnt[r.level]++;total+=r.amount;gross+=r.gross;reduce+=r.reduction;});
+  const byType={};open.forEach(r=>{byType[r.type]=(byType[r.type]||0)+r.amount;});
+  // 月度清收进展：按费项所属月份汇总
+  const prog={};plan.forEach(r=>{
+    const g=prog[r.month]||(prog[r.month]={month:r.month,count:0,paid:0,gross:0,reduction:0,net:0,collected:0});
+    g.count++;g.gross+=r.gross;g.reduction+=r.reduction;g.net+=r.amount;
+    if(r.paid)g.collected+=r.amount;else g.paid++;
+  });
+  const progress=Object.values(prog).sort((a,b)=>a.month.localeCompare(b.month));
+  // 合计口径核验：明细合计是否与净应收一致
+  const netSum=progress.reduce((a,g)=>a+g.net,0),grossSum=progress.reduce((a,g)=>a+g.gross,0),redSum=progress.reduce((a,g)=>a+g.reduction,0);
+  const checks=[
+    {item:'明细笔数与汇总',status:progress.reduce((a,g)=>a+g.count,0)===plan.length?'ok':'fail',detail:'明细 '+plan.length+' 笔，月度汇总 '+progress.reduce((a,g)=>a+g.count,0)+' 笔'},
+    {item:'减免后净额口径',status:Math.abs(grossSum-redSum-netSum)<1?'ok':'fail',detail:'应缴 '+money(grossSum)+' − 减免 '+money(redSum)+' = 净应缴 '+money(netSum)},
+    {item:'未缴清单金额',status:Math.abs(total- open.reduce((a,r)=>a+r.amount,0))<1?'ok':'fail',detail:'未缴 '+open.length+' 笔，净额 '+money(total)}
+  ];
   $('#res-collection').innerHTML=
     '<div class="card"><p class="sec-label">清收概览</p><div class="kpis">'+
-      kpi('欠费笔数',plan.length,'笔','blue')+
-      kpi('欠费总额',money(total),'元','ink')+
+      kpi('未缴净额',money(total),'已扣减免','red')+
+      kpi('减免合计',money(reduce),'已核减金额','ink')+
       kpi('高风险',cnt.high,'立即催收','red')+
-      kpi('中风险',cnt.medium,'重点跟进','orange')+
+      kpi('未缴笔数',open.length,'笔 / 共 '+plan.length+' 笔','blue')+
     '</div></div>'+
+    '<div class="card"><p class="sec-label">口径核验 · 合计对得上</p>'+tableHTML(checks,[
+      {key:'item',label:'检查项'},
+      {key:'status',label:'结果',fmt:v=>({ok:'通过',warn:'注意',fail:'未通过'})[v],tag:r=>r.status},
+      {key:'detail',label:'说明',fmt:v=>esc(v)}
+    ])+'</div>'+
     '<div class="card"><p class="sec-label">优先级与金额结构</p><div class="charts">'+
       '<div class="chartbox"><div class="ct">优先级分布</div>'+donutChart([
         {label:'高 · 立即',value:cnt.high,color:'#ff3b30'},
@@ -574,34 +630,57 @@ function runCollection(){
       '<div class="chartbox"><div class="ct">各商户类型欠费金额</div>'+barChart(
         Object.entries(byType).map(([k,v])=>({label:k+' 类',value:v})),{format:v=>money(v),labelW:70})+'</div>'+
     '</div></div>'+
-    '<div class="card"><p class="sec-label">催收优先级清单</p>'+tableHTML(plan,[
+    '<div class="card"><p class="sec-label">月度清收进展</p>'+tableHTML(progress.map(g=>({
+      month:g.month,count:g.count,openCount:g.paid,net:g.net,collected:g.collected,
+      rate:g.net?(g.collected/g.net*100):0})),[
+      {key:'month',label:'月份'},
+      {key:'count',label:'应缴笔数'},
+      {key:'openCount',label:'未缴笔数'},
+      {key:'net',label:'净应缴',fmt:v=>money(v)},
+      {key:'collected',label:'已收回',fmt:v=>money(v)},
+      {key:'rate',label:'回款率',fmt:v=>v.toFixed(1)+'%'}
+    ])+'</div>'+
+    '<div class="card"><p class="sec-label">催收优先级清单 · 按净额×账龄×风险</p>'+tableHTML(plan,[
       {key:'merchant',label:'商户'},
       {key:'project',label:'项目'},
       {key:'fee',label:'费项'},
-      {key:'amount',label:'欠费金额',fmt:v=>money(v)},
+      {key:'gross',label:'应缴',fmt:v=>money(v)},
+      {key:'reduction',label:'减免',fmt:v=>money(v)},
+      {key:'amount',label:'净欠费',fmt:v=>money(v)},
       {key:'days',label:'逾期天数',fmt:v=>v+' 天'},
-      {key:'score',label:'风险评分',fmt:v=>v,tag:r=>r.level},
-      {key:'level',label:'优先级',fmt:v=>({high:'高',medium:'中',low:'低'})[v],tag:r=>r.level},
+      {key:'score',label:'风险评分',fmt:v=>v,tag:r=>r.paid?'':r.level},
+      {key:'level',label:'优先级',fmt:v=>({high:'高',medium:'中',low:'低'})[v],tag:r=>r.paid?'':r.level},
       {key:'action',label:'建议行动'},
       {key:'phone',label:'联系电话'}
     ])+'</div>'+
-    (plan.length?'<div class="card"><p class="sec-label">催缴函预览（最高优先级）</p>'+
-      '<div class="tablewrap" style="padding:18px 20px;white-space:pre-wrap;font-size:13px;line-height:1.9;background:#fbfbfd">'+esc(letterText(plan[0]))+'</div>'+
+    (open.length?'<div class="card"><p class="sec-label">催缴函预览（最高优先级）</p>'+
+      '<div class="tablewrap" style="padding:18px 20px;white-space:pre-wrap;font-size:13px;line-height:1.9;background:#fbfbfd">'+esc(letterText(open[0]))+'</div>'+
       '<div class="actions"><button class="btn" id="dl-letter">下载这封催缴函</button>'+
-      '<button class="btn" id="dl-letters">下载全部催缴函</button></div></div>':'');
+      '<button class="btn" id="dl-letters">下载全部催缴函</button></div></div>':'')+
+    (RESULT.collection.lit.length?'<div class="card"><p class="sec-label">诉讼材料清单 · 已进入诉讼 '+RESULT.collection.lit.length+' 笔</p>'+
+      '<div class="tablewrap" style="padding:18px 20px;white-space:pre-wrap;font-size:13px;line-height:1.9;background:#fbfbfd">'+esc(litPacket(RESULT.collection.lit))+'</div>'+
+      '<div class="actions"><button class="btn" id="dl-lit">下载诉讼材料清单</button></div></div>':'');
   bindSort($('#res-collection'));
   $('[data-export="collection"]').classList.remove('hidden');
-  if(plan.length){
-    $('#dl-letter').onclick=()=>txtDownload('催缴函_'+plan[0].merchant+'.txt',letterText(plan[0]));
-    $('#dl-letters').onclick=()=>txtDownload('催缴函全集.txt',plan.map(letterText).join('\n\n'+'='.repeat(40)+'\n\n'));
+  if(open.length){
+    $('#dl-letter').onclick=()=>txtDownload('催缴函_'+open[0].merchant+'.txt',letterText(open[0]));
+    $('#dl-letters').onclick=()=>txtDownload('催缴函全集.txt',open.map(letterText).join('\n\n'+'='.repeat(40)+'\n\n'));
   }
-  toast('分级完成，共 '+plan.length+' 笔欠费');
+  if(RESULT.collection.lit.length)$('#dl-lit').onclick=()=>txtDownload('诉讼材料清单.txt',litPacket(RESULT.collection.lit));
+  toast('分级完成，未缴 '+open.length+' 笔');
+}
+function litPacket(list){
+  return '诉讼材料清单（共 '+list.length+' 笔）\n出具日期：'+ymd(new Date())+'\n\n'+
+    '【通用材料】\n1. 租赁合同 / 物业服务合同原件及复印件\n2. 欠费明细表（费项、期间、应缴、减免、净欠费、逾期天数）\n3. 已发催缴函及送达凭证\n4. 双方主体资格证明（营业执照、法定代表人身份证明）\n5. 授权委托书（如委托代理）\n\n'+
+    '【逐笔清单】\n'+list.map((x,i)=>(i+1)+'. '+x.merchant+'（'+x.project+'）｜'+x.fee+'｜净欠费 '+money(x.amount)+'｜逾期 '+x.days+' 天｜联系人 '+x.contact+' '+x.phone).join('\n')+
+    '\n\n说明：本清单供内部准备参考，正式起诉材料请按当地法院要求及法务意见调整。';
 }
 function letterText(x){
   const today=ymd(new Date());
   const head={high:'紧急催缴通知',medium:'催缴通知',low:'费用缴纳提醒'}[x.level];
   const body={high:'贵方欠款金额较大、逾期时间较长，请于收到本函后 3 个工作日内缴清全部欠款。逾期未缴，我方将启动诉讼程序，由此产生的一切法律后果由贵方承担。',medium:'请贵方于收到本函后 7 个工作日内完成缴费，避免影响后续经营。如有异议请及时与我方联系。',low:'烦请贵方核对并按时缴纳以下费用，如有疑问欢迎随时联系。'}[x.level];
-  return head+'\n\n致：'+x.merchant+'（'+x.project+'）\n联系人：'+x.contact+'　电话：'+x.phone+'\n\n'+body+'\n\n费用类型：'+x.fee+'\n欠费金额：'+money(x.amount)+'\n逾期天数：'+x.days+' 天\n\n'+today+'\n商业运营管理部';
+  const deduction=x.reduction>0?'\n已减免：'+money(x.reduction):'';
+  return head+'\n\n致：'+x.merchant+'（'+x.project+'）\n联系人：'+x.contact+'　电话：'+x.phone+'\n\n'+body+'\n\n费用类型：'+x.fee+'\n应缴金额：'+money(x.gross)+deduction+'\n实欠金额：'+money(x.amount)+'\n逾期天数：'+x.days+' 天\n\n'+today+'\n商业运营管理部';
 }
 function txtDownload(name,text){download(name,new Blob(['\ufeff'+text],{type:'text/plain;charset=utf-8'}));}
 function sampleCollection(){
@@ -613,7 +692,11 @@ function sampleCollection(){
   const feeTypes=['租金','物业费','推广费','水电费'];
   for(let i=0;i<26;i++){
     const due=new Date(2026,9,5+(i%20));
-    f.push({id:i+1,project_id:(i%6)+1,merchant_id:(i%12)+1,fee_type:feeTypes[i%4],amount:Math.round(8000+Math.random()*120000),due_date:ymd(due),payment_status:'未缴'});
+    const gross=Math.round(8000+Math.random()*120000);
+    const old=due<new Date(2026,9,1);
+    f.push({id:i+1,project_id:(i%6)+1,merchant_id:(i%12)+1,fee_type:feeTypes[i%4],amount:gross,
+      reduction:i%7===0?Math.round(gross*0.1):0,due_date:ymd(due),
+      payment_status:i%9===0?'已缴':'未缴',litigation_status:i%11===0?'诉讼中':'无'});
   }
   DATA.collection={projects:p,merchants:m,fees:f};markSample('collection');runCollection();
 }
@@ -629,13 +712,28 @@ function runReport(){
     const all=[];Object.values(d).forEach(rows=>rows.forEach(r=>{const dt=toDate(r.date);if(dt)all.push(dt);}));
     const last=all.sort((a,b)=>a-b).pop()||new Date();year=last.getFullYear();month=last.getMonth()+1;
   }
-  const inMonth=r=>{const dt=toDate(r.date);return dt&&dt.getFullYear()===year&&dt.getMonth()+1===month;};
-  const md={};Object.entries(d).forEach(([k,rows])=>md[k]=rows.filter(inMonth));
+  const scope=$('#report-scope').value;
+  const qStart=Math.floor((month-1)/3)*3+1,qEnd=qStart+2;
+  const inScope=r=>{
+    const dt=toDate(r.date);if(!dt)return false;
+    const y=dt.getFullYear(),m=dt.getMonth()+1;
+    if(scope==='quarter')return y===year&&m>=qStart&&m<=qEnd;
+    if(scope==='ytd')return y===year&&m<=month;
+    return y===year&&m===month;
+  };
+  const scopeLabel=scope==='quarter'?(year+' 年第 '+Math.ceil(month/3)+' 季度'):scope==='ytd'?(year+' 年 1–'+month+' 月累计'):(year+' 年 '+month+' 月');
+  const md={};Object.entries(d).forEach(([k,rows])=>md[k]=rows.filter(inScope));
   const ids=new Set(),pids=new Set();
   Object.values(md).forEach(rows=>rows.forEach(r=>{if(r.merchant_id!=null)ids.add(String(r.merchant_id));if(r.project_id!=null)pids.add(String(r.project_id));}));
   const inc={lease:md.lease.reduce((a,r)=>a+num(r.amount),0),property:md.property.reduce((a,r)=>a+num(r.amount),0),events:md.events.reduce((a,r)=>a+num(r.revenue),0)};
   const total=inc.lease+inc.property+inc.events;
-  const b=md.budget[0]||{};const budget=num(b.budget_amount),actual=num(b.actual_amount),variance=actual-budget;
+  // 预算表按日多行会重复累计：先按月去重（每月取最后一条），再汇总，避免季度混入日明细虚增
+  const bm={};
+  md.budget.forEach(r=>{const dt=toDate(r.date);if(!dt)return;bm[dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')]=r;});
+  const budgetRows=Object.values(bm);
+  const budget=budgetRows.reduce((a,r)=>a+num(r.budget_amount),0);
+  const actual=budgetRows.reduce((a,r)=>a+num(r.actual_amount),0);
+  const variance=actual-budget;
   const checks=[];
   const starts={};Object.entries(d).forEach(([k,rows])=>{const ds=rows.map(r=>toDate(r.date)).filter(Boolean).map(ymd).sort();if(ds.length)starts[k]=ds[0];});
   const uniqStarts=new Set(Object.values(starts));
@@ -646,42 +744,59 @@ function runReport(){
   checks.push({item:'数据总量',status:totalRows?'ok':'fail',detail:'共 '+totalRows+' 条记录'});
   let dup=0;Object.entries(d).forEach(([k,rows])=>{const seen=new Set();rows.forEach(r=>{const s=JSON.stringify(r);if(seen.has(s))dup++;seen.add(s);});});
   checks.push({item:'重复记录',status:dup?'warn':'ok',detail:dup?'发现 '+dup+' 条重复':'无重复记录'});
+  checks.push({item:'合计复核',status:Math.abs((inc.lease+inc.property+inc.events)-total)<1?'ok':'fail',detail:'招商 '+money(inc.lease)+' + 物业 '+money(inc.property)+' + 活动 '+money(inc.events)+' = '+money(total)});
+  const rawBudget=md.budget.reduce((a,r)=>a+num(r.budget_amount),0);
+  checks.push({item:'预算口径（防日明细虚增）',status:Math.abs(rawBudget-budget)<1?'ok':'warn',detail:'原始逐行 '+money(rawBudget)+' → 按月去重 '+money(budget)+(Math.abs(rawBudget-budget)>=1?'，已剔除重复行':'')});
+  checks.push({item:'统计范围',status:'ok',detail:scopeLabel+'｜共 '+budgetRows.length+' 个月预算'});
   const participants=md.events.reduce((a,r)=>a+num(r.participants),0);
   const summary=[];
   const push=(k,v)=>summary.push({项目:k,数值:v});
-  push('报告期间',year+'年'+month+'月');push('商户总数',ids.size);push('项目总数',pids.size);
+  push('报告期间',scopeLabel);push('商户总数',ids.size);push('项目总数',pids.size);
   push('总收入',money(total));push('招商收入',money(inc.lease));push('物业收入',money(inc.property));push('活动收入',money(inc.events));
   push('活动数量',md.events.length);push('活动参与人数',participants);
   push('预算金额',money(budget));push('实际金额',money(actual));push('预算差异',money(variance));
   push('预算差异率',budget?(variance/budget*100).toFixed(1)+'%':'—');
-  RESULT.report={summary,checks,total,inc,budget,actual,variance,year,month};
-  const incomeItems=[{label:'招商',value:inc.lease,color:'#0071e3'},{label:'物业',value:inc.property,color:'#5e6ad2'},{label:'活动',value:inc.events,color:'#30d158'}];
   const trendMap={};
   ['lease','property'].forEach(k=>md[k].forEach(r=>{const dt=toDate(r.date);if(!dt)return;const day=dt.getDate();trendMap[day]=(trendMap[day]||0)+num(r.amount);}));
   const trend=Object.entries(trendMap).sort((a,b)=>+a[0]-+b[0]).map(([k,v])=>({label:k+'日',value:v}));
+  RESULT.report={summary,checks,total,inc,budget,actual,variance,year,month,scopeLabel,ids:ids.size,pids:pids.size,participants,events:md.events.length,trend};
+  const incomeItems=[{label:'招商',value:inc.lease,color:'#0071e3'},{label:'物业',value:inc.property,color:'#5e6ad2'},{label:'活动',value:inc.events,color:'#30d158'}];
   $('#res-report').innerHTML=
-    '<div class="card"><p class="sec-label">'+year+' 年 '+month+' 月 · 核心指标</p><div class="kpis">'+
+    '<div class="card"><p class="sec-label">'+scopeLabel+' · 核心指标</p><div class="kpis">'+
       kpi('总收入',money(total),'三源合计','blue')+
       kpi('商户总数',ids.size,'个在营商户','ink')+
       kpi('项目总数',pids.size,'个运营项目','ink')+
       kpi('预算差异',(variance>=0?'+':'')+pct(budget?variance/budget:0),money(variance),variance>=0?'green':'red')+
     '</div></div>'+
-    '<div class="card"><p class="sec-label">数据口径核验</p>'+tableHTML(checks,[
+    '<div class="card"><p class="sec-label">口径核验 · 已锁死范围与合计</p>'+tableHTML(checks,[
       {key:'item',label:'检查项'},
       {key:'status',label:'结果',fmt:v=>({ok:'通过',warn:'注意',fail:'未通过'})[v],tag:r=>r.status},
       {key:'detail',label:'说明',fmt:v=>esc(v)}
     ])+'</div>'+
     '<div class="card"><p class="sec-label">收入结构与趋势</p><div class="charts">'+
       '<div class="chartbox"><div class="ct">收入来源占比</div>'+donutChart(incomeItems)+'</div>'+
-      '<div class="chartbox"><div class="ct">当月收入趋势（按日汇总 · 招商+物业）</div>'+lineChart(trend)+'</div>'+
+      '<div class="chartbox"><div class="ct">收入趋势（按日汇总 · 招商+物业）</div>'+lineChart(trend)+'</div>'+
     '</div></div>'+
     '<div class="card"><p class="sec-label">汇报数据汇总</p>'+tableHTML(summary,[
       {key:'项目',label:'项目'},
       {key:'数值',label:'数值'}
-    ])+'</div>';
+    ])+'</div>'+
+    '<div class="card"><p class="sec-label">一键成稿 · 可直接贴进 PPT / 汇报文档</p>'+
+      '<div class="tablewrap" style="padding:18px 20px;white-space:pre-wrap;font-size:13px;line-height:1.9;background:#fbfbfd">'+esc(reportDraft(RESULT.report))+'</div>'+
+      '<div class="actions"><button class="btn" id="dl-draft">下载汇报稿</button></div></div>';
   bindSort($('#res-report'));
   $('[data-export="report"]').classList.remove('hidden');
-  toast('汇报已生成：'+year+'年'+month+'月');
+  $('#dl-draft').onclick=()=>txtDownload('经营汇报稿_'+scopeLabel.replace(/[^\d\-—–年月第季度]/g,'')+'.txt',reportDraft(RESULT.report));
+  toast('汇报已生成：'+scopeLabel);
+}
+function reportDraft(r){
+  const okCount=r.checks.filter(c=>c.status==='ok').length;
+  return '经营情况汇报（'+r.scopeLabel+'）\n\n'+
+    '一、总体经营\n本期总收入 '+money(r.total)+'，其中招商 '+money(r.inc.lease)+'、物业 '+money(r.inc.property)+'、活动 '+money(r.inc.events)+'。在营商户 '+r.ids+' 个，运营项目 '+r.pids+' 个。\n\n'+
+    '二、预算执行\n预算 '+money(r.budget)+'，实际 '+money(r.actual)+'，差异 '+money(r.variance)+'（'+(r.budget?(r.variance/r.budget*100).toFixed(1):'0.0')+'%）。'+(r.variance>=0?'超预算完成。':'低于预算，需关注。')+'\n\n'+
+    '三、活动情况\n本期活动 '+r.events+' 场，参与 '+r.participants+' 人次。\n\n'+
+    '四、口径核验\n共 '+r.checks.length+' 项检查，'+okCount+' 项通过。'+(r.checks.filter(c=>c.status!=='ok').length?'需关注：'+r.checks.filter(c=>c.status!=='ok').map(c=>c.item).join('、')+'。':'合计与范围均核对一致。')+'\n\n'+
+    '（本稿由运营工具台自动成稿，数据口径已锁定，重要结论请人工复核后使用。）';
 }
 function sampleReport(){
   const lease=[],budget=[],property=[],events=[];
@@ -710,9 +825,12 @@ $$('[data-sample]').forEach(b=>b.addEventListener('click',()=>({validator:sample
 $$('[data-export]').forEach(b=>b.addEventListener('click',()=>{
   const t=b.dataset.export,r=RESULT[t];
   if(!r){toast('请先运行分析');return;}
-  if(t==='validator')exportXLSX('营业额核验结果.xlsx',{'可疑商户清单':r.map(x=>({'商户ID':x.id,'POS营业额':x.pos,'银行流水':x.bank,'现金营业额':x.cash,'差异率':pct(x.diff),'风险等级':({high:'高',medium:'中',low:'低'})[x.level],'异常描述':x.anoms}))});
-  if(t==='collection')exportXLSX('催收计划.xlsx',{'催收计划':r.map(x=>({'商户':x.merchant,'项目':x.project,'费项':x.fee,'欠费金额':x.amount,'逾期天数':x.days,'风险评分':x.score,'优先级':({high:'高',medium:'中',low:'低'})[x.level],'建议行动':x.action,'联系人':x.contact,'联系电话':x.phone}))});
-  if(t==='report')exportXLSX('经营汇报.xlsx',{'数据汇总':r.summary,'口径核验':r.checks.map(c=>({'检查项':c.item,'结果':({ok:'通过',warn:'注意',fail:'未通过'})[c.status],'说明':c.detail}))});
+  if(t==='validator')exportXLSX('营业额核验结果.xlsx',{'疑点商户清单':r.map(x=>({'商户ID':x.id,'POS营业额':x.pos,'银行流水':x.bank,'差异率':pct(x.diff),'对账缺口(元)':Math.round(x.gapAmt),'预估抽成流失(元)':Math.round(x.leak),'抽成率':pct(r.rate||0.15),'重点核对日':x.topDay,'风险等级':({high:'高',medium:'中',low:'低'})[x.level],'异常描述':x.anoms}))});
+  if(t==='collection')exportXLSX('催收计划.xlsx',{
+    '催收计划':r.plan.map(x=>({'商户':x.merchant,'项目':x.project,'费项':x.fee,'应缴':x.gross,'减免':x.reduction,'净欠费':x.amount,'逾期天数':x.days,'风险评分':x.score,'优先级':({high:'高',medium:'中',low:'低'})[x.level],'缴费状态':x.paid?'已缴':'未缴','诉讼状态':x.lit?'诉讼中':'无','建议行动':x.action,'联系人':x.contact,'联系电话':x.phone})),
+    '月度清收进展':(()=>{const g={};r.plan.forEach(x=>{const a=g[x.month]||(g[x.month]={月份:x.month,笔数:0,未缴:0,净应缴:0,已收回:0});a.笔数++;a.净应缴+=x.amount;if(x.paid)a.已收回+=x.amount;else a.未缴++;});return Object.values(g);})()
+  });
+  if(t==='report')exportXLSX('经营汇报.xlsx',{'数据汇总':r.summary,'口径核验':r.checks.map(c=>({'检查项':c.item,'结果':({ok:'通过',warn:'注意',fail:'未通过'})[c.status],'说明':c.detail})),'汇报稿':reportDraft(r).split('\n').map(line=>({'内容':line}))});
   toast('已导出到下载文件夹');
 }));
 ['validator','collection','report'].forEach(buildUploads);
