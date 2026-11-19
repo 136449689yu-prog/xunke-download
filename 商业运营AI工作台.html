@@ -1117,9 +1117,50 @@ function pageToday(){
   ])+'</div>';
 }
 
+/* ===== 共享数据页：内嵌资料库发布页，表格改动自动同步 ===== */
+function pageShared(){
+  var live='https://workbuddy.link/p/PV8vq50lYC81cQIumfZoqm';
+  var edit='https://www.workbuddy.cn/space/d/PV8vq50lYC81cQIumfZoqm';
+  return head('数据 / 云端共享','共享数据工作台',
+    '三张云端表格：商户流水台账、欠费催收台账、经营数据台账。这里先看工作台样子；要看团队刚改的最新数据，点「加载实时数据」。')+
+  '<div class="card" style="padding:0;overflow:hidden">'+
+    '<div style="padding:15px 22px;border-bottom:.5px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+      '<span class="tag blue" id="sharedMode">快照版</span>'+
+      '<span style="font-size:12px;color:var(--muted);flex:1;min-width:180px">快照版打开即用；实时版读取资料库最新数据（需登录 WorkBuddy）</span>'+
+      '<button class="btn btn-s" onclick="switchShared(\'live\')">加载实时数据</button>'+
+      '<button class="btn btn-s" onclick="switchShared(\'snapshot\')">看快照版</button>'+
+      '<button class="btn btn-s" onclick="window.open(\''+edit+'\',\'_blank\')">编辑云端表格</button>'+
+    '</div>'+
+    '<iframe id="sharedFrame" src="商业运营数据共享工作台-静态版.html" title="共享数据工作台" style="width:100%;height:760px;border:0;display:block;background:#fff"></iframe>'+
+    '<div style="padding:12px 22px;border-top:.5px solid var(--line);font-size:12px;color:var(--muted)">'+
+      '实时版由 WorkBuddy 资料库提供，未登录时会显示登录页，属于资料库的访问规则。'+
+    '</div>'+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="sec-label">团队怎么用</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">'+
+      '<div><div style="font-size:13px;font-weight:600;margin-bottom:5px">1 · 打开云端表格</div><div style="font-size:12px;color:var(--sub);line-height:1.7">点「编辑云端表格」，进入工作台下的三张表。</div></div>'+
+      '<div><div style="font-size:13px;font-weight:600;margin-bottom:5px">2 · 改数据或添加行</div><div style="font-size:12px;color:var(--sub);line-height:1.7">按字段填写商户流水、欠费记录和经营数据。</div></div>'+
+      '<div><div style="font-size:13px;font-weight:600;margin-bottom:5px">3 · 回到这里看结果</div><div style="font-size:12px;color:var(--sub);line-height:1.7">指标和明细自动更新，其他人打开看到的也是同一份。</div></div>'+
+    '</div>'+
+  '</div>';
+}
+
+function switchShared(mode){
+  var f=$('#sharedFrame'),tag=$('#sharedMode');
+  if(!f)return;
+  if(mode==='live'){
+    f.src='https://workbuddy.link/p/PV8vq50lYC81cQIumfZoqm';
+    if(tag){tag.textContent='实时版';tag.className='tag green';}
+  }else{
+    f.src='商业运营数据共享工作台-静态版.html';
+    if(tag){tag.textContent='快照版';tag.className='tag blue';}
+  }
+}
+
 /* ===== 渲染器映射（页面 HTML 在最后统一注入） ===== */
 const RENDER={
-  today:pageToday,
+  today:pageToday,shared:pageShared,
   validator:pageValidator,collection:pageCollection,report:pageReport,events:pageEvents,
   letter:pageLetter,lease:pageLease,property:pageProperty,security:pageSecurity
 };
@@ -1150,10 +1191,12 @@ const ICON={
   security:'<path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6z"/>',
   property:'<path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/>',
   lease:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
-  experts:'<path d="M12 3l8 4v6c0 4.4-3.2 7.6-8 9-4.8-1.4-8-4.6-8-9V7z"/><path d="M9 12l2 2 4-4"/>'
+  experts:'<path d="M12 3l8 4v6c0 4.4-3.2 7.6-8 9-4.8-1.4-8-4.6-8-9V7z"/><path d="M9 12l2 2 4-4"/>',
+  shared:'<path d="M4 7h16M4 12h10M4 17h16"/><path d="M17 10l3 2-3 2"/>'
 };
 const PAGES=[
   {id:'today',name:'今日待办',group:'总览',icon:'today'},
+  {id:'shared',name:'共享数据',group:'总览',icon:'shared'},
   {id:'validator',name:'营业额核验',group:'营运管理',icon:'validator'},
   {id:'collection',name:'欠费催收分级',group:'营运管理',icon:'collection'},
   {id:'report',name:'经营汇报',group:'营运管理',icon:'report'},
@@ -1176,7 +1219,7 @@ function buildNav(){
 }
 function go(id){
   CURRENT=id;
-  $('.app').classList.toggle('no-ai',id==='experts');
+  $('.app').classList.toggle('no-ai',id==='experts'||id==='shared');
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id));
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
   $('#main').scrollTop=0;
@@ -1265,13 +1308,14 @@ function dataBar(id){
 
 /* 启动：先注入页面 HTML，再建菜单，最后恢复本浏览器保存的数据 */
 $('#main').innerHTML=PAGES.map(p=>'<section class="page" id="page-'+p.id+'">'+
-  (p.id==='experts'?pageExperts():(expertStrip(p.id)+RENDER[p.id]()))+dataBar(p.id)+'</section>').join('');
+  (p.id==='experts'?pageExperts():(p.id==='shared'?RENDER[p.id]():(expertStrip(p.id)+RENDER[p.id]())))+(p.id==='shared'?'':dataBar(p.id))+'</section>').join('');
 buildNav();
 const restored=restoreTables();
 makeEditable();
 initTpl();
 initContract();
-go('today');
+var wanted=new URLSearchParams(location.search).get('page');
+go(wanted&&PAGES.some(function(p){return p.id===wanted;})?wanted:'today');
 if(restored)toastDemo('已恢复本浏览器保存的 '+restored+' 页数据');
 </script>
 </body>
