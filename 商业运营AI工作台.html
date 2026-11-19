@@ -8,7 +8,7 @@
 :root{
   --bg:#f5f5f7;--card:#fff;--ink:#1d1d1f;--sub:#6e6e73;--muted:#86868b;
   --line:#e8e8ed;--blue:#0071e3;--green:#30d158;--orange:#ff9f0a;--red:#ff3b30;
-  --purple:#5e6ad2;--shadow:0 1px 3px rgba(0,0,0,.04),0 8px 30px rgba(0,0,0,.04);
+  --purple:#8e8e93;--shadow:0 1px 3px rgba(0,0,0,.04),0 8px 30px rgba(0,0,0,.04);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -32,7 +32,7 @@ body{
 }
 .brand{display:flex;align-items:center;gap:10px;padding:0 10px 22px}
 .brand .logo{
-  width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0071e3,#5e6ad2);
+  width:34px;height:34px;border-radius:10px;background:#1d1d1f;
   display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;letter-spacing:-1px;
 }
 .brand .bt{font-size:15px;font-weight:600;letter-spacing:-.3px}
@@ -73,10 +73,12 @@ body{
 .kpi .s{font-size:11px;color:var(--muted)}
 .kpi .v.blue{color:var(--blue)}.kpi .v.green{color:var(--green)}
 .kpi .v.orange{color:var(--orange)}.kpi .v.red{color:var(--red)}
-.kpi .v.purple{color:var(--purple)}
+.kpi .v.purple{color:var(--sub)}
 .expert-strip{display:flex;align-items:center;gap:13px;background:var(--card);border-radius:18px;padding:12px 18px;box-shadow:var(--shadow);margin-bottom:18px;border-left:3px solid var(--blue)}
-.ex-ic{width:28px;height:28px;flex:0 0 28px;border-radius:9px;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
-.ex-ic.lg{width:40px;height:40px;flex:0 0 40px;border-radius:12px;font-size:18px}
+.ex-ic{width:28px;height:28px;flex:0 0 28px;border-radius:9px;background:#f0f0f3;color:#6e6e73;display:inline-flex;align-items:center;justify-content:center}
+.ex-ic svg{width:16px;height:16px;stroke-width:1.5}
+.ex-ic.lg{width:40px;height:40px;flex:0 0 40px;border-radius:12px}
+.ex-ic.lg svg{width:20px;height:20px}
 .ex-tx{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
 .ex-tx b{font-size:13px;color:var(--ink)}
 .ex-tx span{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -110,7 +112,7 @@ tr:last-child td{border-bottom:0}
 .tag.low,.tag.green{background:#e8f9ed;color:#1a7f37}
 .tag.blue{background:#e8f2ff;color:#0066cc}
 .tag.gray{background:#f0f0f3;color:#6e6e73}
-.tag.purple{background:#eef0ff;color:#5e6ad2}
+.tag.purple{background:#f0f0f3;color:#6e6e73}
 
 /* 功能按钮区 */
 .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:4px}
@@ -162,7 +164,7 @@ select.inp{min-width:150px}
 }
 .ai-head{padding:20px 20px 14px;border-bottom:.5px solid var(--line)}
 .ai-head .t{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600}
-.ai-head .t .spark{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#5e6ad2,#0071e3);
+.ai-head .t .spark{width:26px;height:26px;border-radius:8px;background:#1d1d1f;
   display:grid;place-items:center;color:#fff;font-size:14px}
 .ai-head .d{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.6}
 .ai-msg{flex:1;overflow-y:auto;padding:18px 18px 8px;display:flex;flex-direction:column;gap:14px}
@@ -170,7 +172,7 @@ select.inp{min-width:150px}
 .msg.bot{background:#fff;align-self:flex-start;border-bottom-left-radius:5px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 .msg.me{background:var(--blue);color:#fff;align-self:flex-end;border-bottom-right-radius:5px}
 .msg .who{font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600}
-.msg.bot .who{color:var(--purple)}
+.msg.bot .who{color:var(--sub)}
 .ai-input{padding:12px 16px 16px;border-top:.5px solid var(--line)}
 .ai-input .quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .ai-input .quick button{border:.5px solid var(--line);background:#fff;border-radius:16px;padding:5px 11px;
@@ -194,7 +196,7 @@ select.inp{min-width:150px}
   .ai{display:none}
   .ai.open{display:flex;position:fixed;right:0;top:0;bottom:0;width:320px;z-index:60;box-shadow:-8px 0 30px rgba(0,0,0,.12)}
   .mtoggle{display:grid;place-items:center;position:fixed;right:16px;bottom:16px;width:52px;height:52px;
-    border:0;border-radius:50%;background:var(--blue);color:#fff;z-index:50;box-shadow:0 8px 24px rgba(0,113,227,.35);cursor:pointer;font-size:22px}
+    border:0;border-radius:50%;background:var(--blue);color:#fff;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.14);cursor:pointer;font-size:22px}
 }
 @media(max-width:760px){
   .app{grid-template-columns:1fr}
@@ -209,6 +211,36 @@ select.inp{min-width:150px}
 .menu-btn{display:none;background:transparent;border:0;cursor:pointer;padding:4px;margin-right:8px;color:var(--ink)}
 .menu-btn svg{width:22px;height:22px}
 .phead .title-row{display:flex;align-items:center}
+
+/* ===== 小珑ui：4px 网格与克制的视觉层 ===== */
+.side{padding:24px 12px 16px}
+.brand{padding:0 12px 24px}
+.nav button{padding:8px 12px;border-radius:10px}
+.nav-label{padding:16px 12px 8px}
+.main{padding:32px 40px 64px}
+.phead{margin-bottom:24px}
+.phead h1{font-size:30px;font-weight:500;letter-spacing:-.6px}
+.phead .eyebrow{font-size:12px;letter-spacing:.2px}
+.card{padding:24px;border-radius:20px;margin-bottom:20px}
+.kpi{padding:20px;border-radius:16px}
+.kpi .v{font-size:28px;font-weight:600;letter-spacing:-.4px}
+.sec-label{margin-bottom:16px}
+.btn{padding:8px 16px;border-radius:10px}
+.btn-s{padding:6px 12px;border-radius:8px}
+.chartbox .ct{font-weight:500}
+th{padding:10px 12px}
+td{padding:12px}
+.demo-foot{font-size:11px;color:var(--muted);text-align:center;padding:24px 0 8px}
+.demo-tag{background:#f0f0f3;color:var(--muted);font-size:11px;padding:3px 8px;border-radius:6px;letter-spacing:0;font-weight:400}
+.chart-note{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6}
+.risk-txt{font-size:12px;color:var(--muted)}
+.risk-h{color:#d70015}.risk-m{color:#b25e00}
+.brand .logo{background:#1d1d1f;border-radius:10px;font-weight:600}
+.ai-head .t .spark{background:#1d1d1f;border-radius:8px;font-size:13px}
+.msg.bot .who{color:var(--muted)}
+.aiview{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.aiview iframe{width:100%;height:820px;border:0;display:block;background:#fff}
+@media(max-width:760px){.main{padding:20px 16px 80px}.card{padding:20px 16px;border-radius:16px}.aiview iframe{height:720px}}
 </style>
 </head>
 <body>
@@ -230,20 +262,20 @@ select.inp{min-width:150px}
   <!-- 右侧 AI 助理 -->
   <aside class="ai" id="ai">
     <div class="ai-head">
-      <div class="t"><span class="spark">✦</span><span>运营助理</span></div>
-      <div class="d">走到哪问到哪。回答会结合当前页面数据。</div>
+      <div class="t"><span class="spark"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span>运营助理</span></div>
+      <div class="d">回答结合当前页面数据，在本地生成。</div>
     </div>
     <div class="ai-msg" id="aiMsg">
-      <div class="msg bot"><div class="who">运营助理</div>你好，我是你的运营助理。左侧选一个工具，我可以帮你解读当前页面的数据。试试下面的快捷问题。</div>
+      <div class="msg bot"><div class="who">运营助理</div>左侧选一个工具，我可以解读当前页面的数据。也可以直接问下面的问题。</div>
     </div>
     <div class="ai-input">
       <div class="quick" id="quick">
-        <button>哪个商户风险最高？</button>
-        <button>给我总结这页数据</button>
-        <button>有什么建议？</button>
+        <button>哪个商户风险最高</button>
+        <button>总结这页数据</button>
+        <button>本月经营情况</button>
       </div>
       <div class="row">
-        <textarea id="aiText" placeholder="问我关于当前页面的问题…"></textarea>
+        <textarea id="aiText" placeholder="问当前页的数据"></textarea>
         <button class="send" id="aiSend">↑</button>
       </div>
       <div class="ai-note">演示模式 · 基于当前页面的本地数据回答</div>
@@ -253,7 +285,7 @@ select.inp{min-width:150px}
 </div>
 <script>
 /* ===== 公共：SVG 图表 ===== */
-const PAL=['#0071e3','#5e6ad2','#30d158','#ff9f0a','#ff3b30','#8e8e93','#34c759','#af52de'];
+const PAL=['#0071e3','#8e8e93','#c7c7cc','#ff9f0a','#ff3b30','#d1d1d6','#30d158','#aeaeb2'];
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>'¥'+Number(v||0).toLocaleString('zh-CN',{maximumFractionDigits:0});
 const pct=v=>((v||0)*100).toFixed(1)+'%';
@@ -313,7 +345,7 @@ function tableHTML(rows,cols){
   return '<div class="tablewrap"><table><thead><tr>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div>';
 }
 function kpi(k,v,s,color){return '<div class="kpi"><div class="k">'+esc(k)+'</div><div class="v '+(color||'')+'">'+esc(v)+'</div><div class="s">'+esc(s||'')+'</div></div>';}
-function head(eyebrow,title,desc,tag){return '<div class="phead"><div class="title-row"><span class="menu-btn" onclick="toggleSide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></span><div><div class="eyebrow">'+esc(eyebrow)+'</div><h1>'+esc(title)+(tag?'<span class="demo-tag">● 演示数据</span>':'')+'</h1><p>'+esc(desc)+'</p></div></div></div>';}
+function head(eyebrow,title,desc,tag){return '<div class="phead"><div class="title-row"><span class="menu-btn" onclick="toggleSide()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></span><div><div class="eyebrow">'+esc(eyebrow)+'</div><h1>'+esc(title)+(tag?'':'')+'</h1><p>'+esc(desc)+'</p></div></div></div>';}
 
 /* ===== 公共：真实导入 / 导出 / 下载（纯本地，无外部依赖） ===== */
 function dl(name,text,type){
@@ -765,9 +797,11 @@ function pageReport(){return head('营运管理 / 自动成稿','月度经营汇
   {key:'d',label:'说明'}])+'</div>'+
 '<div class="card"><p class="sec-label">收入结构与趋势</p><div class="charts">'+
   '<div class="chartbox"><div class="ct">收入来源占比</div>'+donutChart([
-    {label:'招商',value:62,color:'#0071e3'},{label:'物业',value:27,color:'#5e6ad2'},{label:'活动',value:11,color:'#30d158'}])+'</div>'+
+    {label:'招商',value:62,color:'#0071e3'},{label:'物业',value:27,color:'#c7c7cc'},{label:'活动',value:11,color:'#aeaeb2'}])+
+    '<div class="chart-note">口径：2026 年 10 月 · 单位：% · 演示数据</div></div>'+
   '<div class="chartbox"><div class="ct">当月收入趋势（万元）</div>'+lineChart([
-    {label:'1日',value:9.2},{label:'5日',value:11.4},{label:'10日',value:10.1},{label:'15日',value:12.8},{label:'20日',value:9.6},{label:'25日',value:11.2},{label:'31日',value:13.1}])+'</div>'+
+    {label:'1日',value:9.2},{label:'5日',value:11.4},{label:'10日',value:10.1},{label:'15日',value:12.8},{label:'20日',value:9.6},{label:'25日',value:11.2},{label:'31日',value:13.1}])+
+    '<div class="chart-note">口径：单月逐日 · 单位：万元 · 演示数据</div></div>'+
 '</div></div>'+
 '<div class="card"><p class="sec-label">一键成稿 · 可直接贴进 PPT</p>'+
   '<div class="doc">经营情况汇报（2026 年 10 月）\n\n一、总体经营\n本期总收入 ¥286.4 万，其中招商 ¥177.6 万、物业 ¥77.3 万、活动 ¥31.5 万。在营商户 128 个，运营项目 6 个。\n\n二、预算执行\n预算 ¥312.3 万，实际 ¥286.4 万，差异 -¥25.9 万（-8.3%），低于预算，需关注招商收入。\n\n三、口径核验\n共 4 项检查全部通过，合计与范围均核对一致。\n\n（本稿由工作台自动成稿，数据口径已锁定，重要结论请人工复核。）</div>'+
@@ -787,7 +821,7 @@ function pageEvents(){return head('增长与招商 / 企划','企划活动方案
 '</div></div>'+
 '<div class="card"><p class="sec-label">预算分配与效果预测</p><div class="charts">'+
   '<div class="chartbox"><div class="ct">预算分配占比</div>'+donutChart([
-    {label:'场地',value:35,color:'#0071e3'},{label:'物料',value:25,color:'#5e6ad2'},
+    {label:'场地',value:35,color:'#0071e3'},{label:'物料',value:25,color:'#c7c7cc'},
     {label:'推广',value:25,color:'#ff9f0a'},{label:'应急',value:15,color:'#30d158'}])+'</div>'+
   '<div class="chartbox"><div class="ct">各活动预计客流（人次）</div>'+barChart([
     {label:'国庆',value:12000,color:'#0071e3'},{label:'中秋',value:8500},{label:'周末市集',value:5200}],
@@ -827,7 +861,7 @@ function pageLetter(){return head('增长与招商 / 催缴','催费函自动生
     {format:v=>money(v),labelW:70})+'</div>'+
   '<div class="chartbox"><div class="ct">营业额异常类型</div>'+donutChart([
     {label:'整数连报',value:2,color:'#ff3b30'},{label:'节假日反常',value:1,color:'#ff9f0a'},
-    {label:'异常波动',value:1,color:'#5e6ad2'}])+'</div>'+
+    {label:'异常波动',value:1,color:'#c7c7cc'}])+'</div>'+
 '</div></div>'+
 '<div class="card"><p class="sec-label">催费函模板 · 可自己改（改完自动保存）</p>'+
   '<div class="tplbar">'+
@@ -868,7 +902,7 @@ function pageLease(){return head('增长与招商 / 招商','招商合同与线�
 '<div class="card"><p class="sec-label">线索来源与意向分布</p><div class="charts">'+
   '<div class="chartbox"><div class="ct">线索来源占比</div>'+donutChart([
     {label:'微信',value:14,color:'#30d158'},{label:'表格',value:10,color:'#0071e3'},
-    {label:'CRM',value:8,color:'#5e6ad2'}])+'</div>'+
+    {label:'CRM',value:8,color:'#c7c7cc'}])+'</div>'+
   '<div class="chartbox"><div class="ct">意向等级分布</div>'+barChart([
     {label:'高意向',value:9,color:'#ff3b30'},{label:'中意向',value:13,color:'#ff9f0a'},{label:'低意向',value:10,color:'#8e8e93'}],
     {format:v=>v+' 个',labelW:70})+'</div>'+
@@ -1010,6 +1044,15 @@ function pageSecurity(){return head('后勤与安全 / 安防','安防 AI 管理
 '</div></div>';}
 
 /* ===== 专家团队：6 位专家及其职责（源自专家团队设计文档） ===== */
+const EX_ICON={
+  chief:'<path d="M12 3l8 4v6c0 4.4-3.2 7.6-8 9-4.8-1.4-8-4.6-8-9V7z"/><path d="M9 12l2 2 4-4"/>',
+  ops:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  plan:'<path d="M12 3l2.4 7.4H22l-6 4.4 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.4h7.6z"/>',
+  lease:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+  property:'<path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/>',
+  security:'<path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6z"/>'
+};
+function exIcon(id){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">'+EX_ICON[id]+'</svg>';}
 const EXPERTS=[
   {id:'chief',name:'商业地产 AI 战略专家',role:'团队总负责人',icon:'✦',color:'#1d1d1f',
    duty:'制定 AI 运营战略与实施路径，协调各模块专家，整合成果形成完整交付，对接高层汇报。',
@@ -1019,7 +1062,7 @@ const EXPERTS=[
    duty:'开发商户营业额真实性核验与催费函自动化系统，设计多源比对与异常识别算法，确保准确合规。',
    skills:['多源流水比对','异常识别','催费系统','合规核验'],
    tools:'营业额核验 · 欠费催收分级 · 催费函生成',pages:['validator','collection','letter']},
-  {id:'plan',name:'企划 AI 专家',role:'活动方案与宣传视频专家',icon:'◆',color:'#5e6ad2',
+  {id:'plan',name:'企划 AI 专家',role:'活动方案与宣传视频专家',icon:'◆',color:'#c7c7cc',
    duty:'开发活动方案自动生成与宣传视频辅助工具，设计 AI 辅助经营汇报，兼顾创意与实用。',
    skills:['活动方案生成','视频脚本','经营汇报','数据可视化'],
    tools:'企划活动方案 · 经营汇报',pages:['events','report']},
@@ -1040,17 +1083,17 @@ const EXPERT_OF={validator:'ops',collection:'ops',letter:'ops',report:'plan',eve
 function expertOf(id){return EXPERTS.find(e=>e.id===EXPERT_OF[id]);}
 function expertStrip(id){
   const e=expertOf(id);if(!e)return '';
-  return '<div class="expert-strip"><span class="ex-ic" style="background:'+e.color+'">'+e.icon+'</span>'+
+  return '<div class="expert-strip"><span class="ex-ic">'+exIcon(e.id)+'</span>'+
     '<span class="ex-tx"><b>负责专家 · '+esc(e.name)+'</b><span>'+esc(e.duty)+'</span></span>'+
     '<button class="btn" onclick="go(\'experts\')">看专家团队</button></div>';
 }
 function pageExperts(){return head('团队 / 职责','商业地产 AI 运营专家团队','6 位专家分工协作，每位对应工作台里的具体工具。点击工具可直接跳转。',true)+
 '<div class="card"><p class="sec-label">团队构成</p><div class="kpis">'+
   kpi('专家总数','6','位','blue')+kpi('覆盖领域','5','营运/企划/招商/工程/安防','ink')+
-  kpi('分工工具','8','6 位专家合计覆盖','purple')+kpi('总负责人','1','战略统筹','green')+
+  kpi('分工工具','8','6 位专家合计覆盖')+kpi('总负责人','1','战略统筹','green')+
 '</div></div>'+
-'<div class="expert-grid">'+EXPERTS.map(e=>
-  '<div class="expert-card"><div class="ec-head"><span class="ex-ic lg" style="background:'+e.color+'">'+e.icon+'</span>'+
+  '<div class="expert-grid">'+EXPERTS.map(e=>
+  '<div class="expert-card"><div class="ec-head"><span class="ex-ic lg">'+exIcon(e.id)+'</span>'+
   '<div><div class="ec-name">'+esc(e.name)+'</div><div class="ec-role">'+esc(e.role)+'</div></div></div>'+
   '<p class="ec-duty">'+esc(e.duty)+'</p>'+
   '<div class="ec-skills">'+e.skills.map(s=>'<span>'+esc(s)+'</span>').join('')+'</div>'+
@@ -1090,21 +1133,23 @@ function pageToday(){
     kpi('待处理事项',sorted.length+URGENT.length,'条，含 '+URGENT.length+' 条时间紧急','blue')+
     kpi('涉及金额',money(total),'对账缺口 + 净欠费','red')+
     kpi('高风险',high,'条按金额优先处理','orange')+
-    kpi('覆盖工具',new Set([...TODOS,...URGENT].map(x=>x.src)).size,'个工具的数据汇总','purple')+
+    kpi('覆盖工具',new Set([...TODOS,...URGENT].map(x=>x.src)).size,'个工具的数据汇总')+
   '</div></div>'+
   '<div class="card"><p class="sec-label">风险来源与金额分布</p><div class="charts">'+
     '<div class="chartbox"><div class="ct">涉及金额来源</div>'+donutChart(
-      Object.entries(bySrc).map(([k,v])=>({label:k,value:v,color:srcColor[k]||'#5e6ad2'})),{format:v=>money(v)})+'</div>'+
+      Object.entries(bySrc).map(([k,v])=>({label:k,value:v,color:srcColor[k]||'#c7c7cc'})),{format:v=>money(v)})+
+      '<div class="chart-note">来源：核验与催收台账 · 口径：对账缺口 + 净欠费 · 演示数据</div></div>'+
     '<div class="chartbox"><div class="ct">金额 Top 6（元）</div>'+barChart(
-      sorted.slice(0,6).map(x=>({label:x.t.split(' · ')[0],value:x.amt,color:x.src==='欠费催收'?'#ff3b30':'#0071e3'})),
-      {format:v=>money(v),labelW:70})+'</div>'+
+      sorted.slice(0,6).map((x,i)=>({label:x.t.split(' · ')[0],value:x.amt,color:i===0?'#0071e3':'#c7c7cc'})),
+      {format:v=>money(v),labelW:70})+
+      '<div class="chart-note">按涉及金额排序 · 单位：元 · 演示数据</div></div>'+
   '</div></div>'+
   '<div class="card"><p class="sec-label">今日处理顺序 · 按涉及金额从大到小</p>'+tableHTML(sorted,[
     {key:'i',label:'#',fmt:(v,r)=>String(sorted.indexOf(r)+1)},
     {key:'t',label:'待办事项',fmt:(v,r)=>'<div style="white-space:normal;min-width:170px"><b>'+esc(v)+'</b><div style="font-size:11px;color:var(--muted);margin-top:3px">'+esc(r.act)+' · '+esc(r.kind)+'</div></div>'},
     {key:'src',label:'来源'},
     {key:'amt',label:'涉及金额',fmt:v=>money(v)},
-    {key:'lv',label:'风险',tag:r=>r.lv==='高'?'red':r.lv==='中'?'orange':'green'},
+    {key:'lv',label:'风险',fmt:v=>'<span class="risk-txt risk-'+(v==='高'?'h':v==='中'?'m':'l')+'">'+esc(v)+'</span>'},
     {key:'days',label:'账龄 / 重点日'},
     {key:'go',label:'',fmt:(v,r)=>'<button class="btn btn-s" onclick="go(\''+r.page+'\')">去处理</button>'}
   ])+'</div>'+
@@ -1121,18 +1166,18 @@ function pageToday(){
 function pageShared(){
   var live='https://workbuddy.link/p/PV8vq50lYC81cQIumfZoqm';
   var edit='https://www.workbuddy.cn/space/d/PV8vq50lYC81cQIumfZoqm';
-  return head('数据 / 云端共享','共享数据工作台',
-    '三张云端表格：商户流水台账、欠费催收台账、经营数据台账。这里先看工作台样子；要看团队刚改的最新数据，点「加载实时数据」。')+
-  '<div class="card" style="padding:0;overflow:hidden">'+
-    '<div style="padding:15px 22px;border-bottom:.5px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
-      '<span class="tag blue" id="sharedMode">快照版</span>'+
-      '<span style="font-size:12px;color:var(--muted);flex:1;min-width:180px">快照版打开即用；实时版读取资料库最新数据（需登录 WorkBuddy）</span>'+
+  return head('数据 / 云端共享','共享数据',
+    '商户流水、欠费催收、经营数据三张表放在资料库里。团队改表后，实时版读到的是最新数据；快照版打开即用。')+
+  '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
+      '<span class="tag gray" id="sharedMode">快照版</span>'+
+      '<span style="font-size:12px;color:var(--muted);flex:1;min-width:180px">实时版需登录 WorkBuddy；快照版无需登录</span>'+
       '<button class="btn btn-s" onclick="switchShared(\'live\')">加载实时数据</button>'+
       '<button class="btn btn-s" onclick="switchShared(\'snapshot\')">看快照版</button>'+
       '<button class="btn btn-s" onclick="window.open(\''+edit+'\',\'_blank\')">编辑云端表格</button>'+
     '</div>'+
-    '<iframe id="sharedFrame" src="商业运营数据共享工作台-静态版.html" title="共享数据工作台" style="width:100%;height:760px;border:0;display:block;background:#fff"></iframe>'+
-    '<div style="padding:12px 22px;border-top:.5px solid var(--line);font-size:12px;color:var(--muted)">'+
+  '<div class="card" style="padding:0;overflow:hidden">'+
+    '<div class="aiview"><iframe id="sharedFrame" src="商业运营数据共享工作台-静态版.html" title="共享数据工作台"></iframe></div>'+
+    '<div style="padding:12px 24px;border-top:.5px solid var(--line);font-size:12px;color:var(--muted)">'+
       '实时版由 WorkBuddy 资料库提供，未登录时会显示登录页，属于资料库的访问规则。'+
     '</div>'+
   '</div>'+
@@ -1316,6 +1361,7 @@ initTpl();
 initContract();
 var wanted=new URLSearchParams(location.search).get('page');
 go(wanted&&PAGES.some(function(p){return p.id===wanted;})?wanted:'today');
+const fn=document.createElement('div');fn.className='demo-foot';fn.textContent='演示数据 · 本地预设示例，仅在本机处理';$('#main').appendChild(fn);
 if(restored)toastDemo('已恢复本浏览器保存的 '+restored+' 页数据');
 </script>
 </body>
