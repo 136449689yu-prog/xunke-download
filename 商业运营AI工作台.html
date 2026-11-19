@@ -167,6 +167,9 @@ select.inp{min-width:150px}
 /* 移动 */
 .mtoggle{display:none}
 .overlay{display:none}
+.app.no-ai .ai{display:none!important}
+.app.no-ai .mtoggle{display:none!important}
+@media(min-width:1101px){.app.no-ai{grid-template-columns:248px 1fr}}
 @media(max-width:1100px){
   .app{grid-template-columns:220px 1fr}
   .ai{display:none}
@@ -781,6 +784,7 @@ function buildNav(){
 }
 function go(id){
   CURRENT=id;
+  $('.app').classList.toggle('no-ai',id==='experts');
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id));
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
   $('#main').scrollTop=0;
