@@ -247,6 +247,8 @@ td{padding:12px}
 .ai-set .row{display:flex;gap:8px;align-items:center}
 .ai-set .row .btn{flex:1;font-size:12px;padding:7px 10px}
 .model-tag{font-size:11px;color:var(--green);background:rgba(48,209,88,.12);padding:3px 8px;border-radius:6px;margin-left:6px;font-weight:500}
+.status-line{font-size:12px;color:var(--sub);padding:10px 12px;border-radius:10px;background:#f0f0f3;margin-bottom:12px}
+.status-line.on{color:#1a8a38;background:rgba(48,209,88,.12)}
 .msg .err{color:#d70015}
 .gear{margin-left:auto;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:4px;border-radius:8px;line-height:0}
 .gear:hover{background:#f0f0f3;color:var(--ink)}
@@ -281,16 +283,14 @@ td{padding:12px}
       <div class="d" id="aiMode">本地演示模式 · 回答基于当前页数据</div>
     </div>
     <div class="ai-set" id="aiSet">
-      <label for="aiKey">智谱 API Key（只存本机浏览器）</label>
-      <input id="aiKey" type="password" placeholder="粘贴你的 API Key" autocomplete="off">
-      <label for="aiModel">模型</label>
-      <input id="aiModel" value="glm-4.5" placeholder="glm-4.5">
-      <div class="tip">Key 只保存在你这台设备的浏览器里，不会写进网页或上传。留空则使用本地演示回答。</div>
+      <div class="tip" style="margin-top:0">真正的模型回答跑在你本机的服务上。Key 只存在本机，网页不碰、不上传。</div>
+      <div class="status-line" id="aiStatus">正在检查本机服务…</div>
       <div class="row">
-        <button class="btn primary" id="aiSave">保存</button>
-        <button class="btn" id="aiClear">清除</button>
+        <button class="btn primary" id="aiOpenSetup">打开本机设置</button>
+        <button class="btn" id="aiRefresh">重新检测</button>
         <button class="btn" id="aiClose">收起</button>
       </div>
+      <div class="tip">没启动服务时，助理照常用本地演示回答，其它功能不受影响。</div>
     </div>
     <div class="ai-msg" id="aiMsg">
       <div class="msg bot"><div class="who">运营助理</div>左侧选一个工具，我可以解读当前页面的数据。也可以直接问下面的问题。</div>
@@ -1337,27 +1337,29 @@ function answer(q){
   const e=expertOf(CURRENT);
   return (e?'【'+e.name+'】':'【运营助理】')+answerRaw(q);
 }
-/* ===== GLM-4.5 接入：key 只存本机 localStorage，不写入网页源码 ===== */
-const AI_CFG_KEY='xunke_glm_cfg_v1';
-function aiCfg(){
-  try{return JSON.parse(localStorage.getItem(AI_CFG_KEY)||'{}')||{};}catch(e){return {};}
-}
-function aiSaveCfg(){
-  const key=$('#aiKey').value.trim();
-  const model=$('#aiModel').value.trim()||'glm-4.5';
+/* ===== GLM-4.5 接入：网页只连本机服务，Key 全在本机 config.json ===== */
+const AI_LOCAL='http://127.0.0.1:8765';
+let AI_STATE={ok:false,configured:false,model:'glm-4.5'};
+async function checkAI(){
   try{
-    if(key)localStorage.setItem(AI_CFG_KEY,JSON.stringify({key:key,model:model}));
-    else localStorage.removeItem(AI_CFG_KEY);
-  }catch(e){}
+    const r=await fetch(AI_LOCAL+'/api/status',{cache:'no-store'});
+    const d=await r.json();
+    AI_STATE={ok:!!d.ok,configured:!!d.configured,model:d.model||'glm-4.5'};
+  }catch(e){AI_STATE={ok:false,configured:false,model:'glm-4.5'};}
   updateAIMode();
-  toastDemo(key?'GLM 已保存，只存在本机':'已清除，恢复本地演示');
+  return AI_STATE;
 }
 function updateAIMode(){
-  const cfg=aiCfg(),on=!!cfg.key;
-  const tag=$('#modelTag'),mode=$('#aiMode');
+  const on=AI_STATE.ok&&AI_STATE.configured;
+  const tag=$('#modelTag'),mode=$('#aiMode'),st=$('#aiStatus');
   if(tag)tag.style.display=on?'':'none';
-  if(tag&&on)tag.textContent=cfg.model||'GLM-4.5';
-  if(mode)mode.textContent=on?('已连接 '+(cfg.model||'glm-4.5')+' · 回答结合当前页数据'):'本地演示模式 · 回答基于当前页数据';
+  if(tag&&on)tag.textContent=AI_STATE.model;
+  if(mode)mode.textContent=on?('已连接 '+AI_STATE.model+' · 本机服务'):'本地演示模式 · 回答基于当前页数据';
+  if(st){
+    st.className='status-line'+(on?' on':'');
+    st.textContent=on?('本机服务已连接 · '+AI_STATE.model):
+      (AI_STATE.ok?'本机服务已启动，还没填 Key，当前用演示回答':'没检测到本机服务，当前用演示回答');
+  }
 }
 function pageContext(){
   const d=DEMO[CURRENT]||{},name=PAGES.find(p=>p.id===CURRENT).name;
@@ -1371,25 +1373,23 @@ function pageContext(){
   return ctx;
 }
 async function askGLM(q){
-  const cfg=aiCfg();
-  if(!cfg.key)return null;
-  const r=await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},
-    body:JSON.stringify({model:cfg.model||'glm-4.5',messages:[
+  if(!(AI_STATE.ok&&AI_STATE.configured))return null;
+  const r=await fetch(AI_LOCAL+'/api/chat',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({messages:[
       {role:'system',content:pageContext()},
       {role:'user',content:q}
-    ],temperature:0.5,max_tokens:800})
+    ]})
   });
-  if(!r.ok)throw new Error(r.status===401?'Key 无效或已过期':r.status===429?'请求太频繁，稍后再试':'接口返回 '+r.status);
-  const j=await r.json();
-  return (j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'模型没有返回内容';
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||('本机服务返回 '+r.status));
+  return j.text||'模型没有返回内容';
 }
 function pushBot(t,isErr){const w=document.createElement('div');w.className='msg bot';w.innerHTML='<div class="who">运营助理</div>'+(isErr?'<span class="err">'+esc(t)+'</span>':esc(t));$('#aiMsg').appendChild(w);$('#aiMsg').scrollTop=$('#aiMsg').scrollHeight;}
 function pushLoading(){const w=document.createElement('div');w.className='msg bot';w.id='aiLoading';w.innerHTML='<div class="who">运营助理</div><span style="color:var(--muted)">正在思考…</span>';$('#aiMsg').appendChild(w);$('#aiMsg').scrollTop=$('#aiMsg').scrollHeight;}
 async function sendQuestion(q){
   pushMe(q);$('#aiText').value='';
-  if(!aiCfg().key){setTimeout(()=>pushBot(answer(q)),300);return;}
+  if(!(AI_STATE.ok&&AI_STATE.configured)){setTimeout(()=>pushBot(answer(q)),300);return;}
   pushLoading();
   try{
     const t=await askGLM(q);
@@ -1409,18 +1409,14 @@ $('#aiSend').onclick=send;
 $('#aiText').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
 $('#quick').querySelectorAll('button').forEach(b=>b.onclick=()=>sendQuestion(b.textContent));
 $('#aiGear').onclick=()=>{
-  const box=$('#aiSet'),cfg=aiCfg();
+  const box=$('#aiSet');
   box.classList.toggle('open');
-  if(box.classList.contains('open')){
-    $('#aiKey').value=cfg.key||'';
-    $('#aiModel').value=cfg.model||'glm-4.5';
-    $('#aiKey').focus();
-  }
+  if(box.classList.contains('open'))checkAI();
 };
-$('#aiSave').onclick=aiSaveCfg;
-$('#aiClear').onclick=()=>{$('#aiKey').value='';aiSaveCfg();};
+$('#aiOpenSetup').onclick=()=>window.open(AI_LOCAL+'/','_blank');
+$('#aiRefresh').onclick=()=>{checkAI().then(()=>toastDemo(AI_STATE.ok&&AI_STATE.configured?'本机服务已连接':'还没检测到可用的本机服务'));};
 $('#aiClose').onclick=()=>$('#aiSet').classList.remove('open');
-updateAIMode();
+checkAI();
 $('#mtoggle').onclick=()=>$('#ai').classList.toggle('open');
 $('#overlay').onclick=()=>{$('#side').classList.remove('open');$('#overlay').classList.remove('show');};
 
