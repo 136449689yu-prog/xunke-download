@@ -36,7 +36,11 @@ body{font-family:Geist,Inter,system-ui,-apple-system,BlinkMacSystemFont,"PingFan
 .nav-item:hover{background:var(--canvas-2);color:var(--ink)}
 .nav-item.active{background:var(--canvas-2);color:var(--ink);font-weight:500}
 .nav-item.active::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;background:var(--primary);border-radius:2px}
-.side-foot{margin-top:auto;font-family:var(--mono);font-size:11px;color:var(--mute);line-height:1.7;padding:0 12px;letter-spacing:-.2px}
+.side-foot{margin-top:auto;padding:0 12px}
+.download-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;margin-bottom:16px;background:var(--primary);color:#fff;border-radius:7px;font-size:13px;font-weight:500;text-decoration:none;transition:opacity .15s}
+.download-btn:hover{opacity:.88;text-decoration:none}
+.download-btn svg{width:15px;height:15px;flex-shrink:0}
+.side-foot .foot-text{font-family:var(--mono);font-size:11px;color:var(--mute);line-height:1.7;letter-spacing:-.2px}
 
 /* 主区 */
 .main{flex:1;min-width:0;padding:36px 40px 64px;max-width:1500px}
@@ -188,7 +192,11 @@ tbody tr:hover{background:var(--canvas)}
       <button class="nav-item" data-view="revenue">收入分析</button>
       <button class="nav-item" data-view="parking">车位使用</button>
     </nav>
-    <div class="side-foot">运维工作台<br><span id="today-label"></span></div>
+    <a class="download-btn" href="https://github.com/136449689yu-prog/xunke-download/releases/download/v20261120/parking-workbench.zip" download title="下载离线安装包（Mac / Windows 通用）">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      下载离线包
+    </a>
+    <div class="side-foot"><span class="foot-text">运维工作台<br><span id="today-label"></span></span></div>
   </aside>
 
   <main class="main">
