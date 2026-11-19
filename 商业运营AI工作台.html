@@ -244,8 +244,8 @@ td{padding:12px}
 .ai-set input{width:100%;font:inherit;font-size:13px;padding:9px 11px;border:.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);outline:none;margin-bottom:12px}
 .ai-set input:focus{border-color:var(--blue)}
 .ai-set .tip{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px}
-.ai-set .row{display:flex;gap:8px;align-items:center}
-.ai-set .row .btn{flex:1;font-size:12px;padding:7px 10px}
+.ai-set .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ai-set .row .btn{flex:1 1 auto;min-width:0;font-size:12px;padding:8px 10px;white-space:nowrap}
 .model-tag{font-size:11px;color:var(--green);background:rgba(48,209,88,.12);padding:3px 8px;border-radius:6px;margin-left:6px;font-weight:500}
 .status-line{font-size:12px;color:var(--sub);padding:10px 12px;border-radius:10px;background:#f0f0f3;margin-bottom:12px}
 .status-line.on{color:#1a8a38;background:rgba(48,209,88,.12)}
@@ -353,14 +353,20 @@ th{font-weight:600;letter-spacing:.02em}
       <div class="d" id="aiMode">本地演示模式 · 回答基于当前页数据</div>
     </div>
     <div class="ai-set" id="aiSet">
-      <div class="tip" style="margin-top:0">真正的模型回答跑在你本机的服务上。Key 只存在本机，网页不碰、不上传。</div>
       <div class="status-line" id="aiStatus">正在检查本机服务…</div>
-      <div class="row">
-        <button class="btn primary" id="aiOpenSetup">打开本机设置</button>
-        <button class="btn" id="aiRefresh">重新检测</button>
-        <button class="btn" id="aiClose">收起</button>
+      <div id="aiCfgBox">
+        <label for="aiKey">智谱 API Key（只存这台电脑）</label>
+        <input id="aiKey" type="password" placeholder="粘贴你的 Key，保存后自动清空" autocomplete="off">
+        <label for="aiModel">模型</label>
+        <input id="aiModel" value="glm-4.5" autocomplete="off">
+        <div class="row">
+          <button class="btn primary" id="aiSave">保存并连接</button>
+          <button class="btn" id="aiRefresh">重新检测</button>
+          <button class="btn" id="aiClose">收起</button>
+        </div>
+        <div class="tip">Key 只写进本机配置文件，不进网页、不上传。没接上时照常用本地演示回答，其它功能不受影响。</div>
       </div>
-      <div class="tip">没启动服务时，助理照常用本地演示回答，其它功能不受影响。</div>
+      <div class="tip" id="aiOnlineTip" style="display:none">这是官网在线版，浏览器不允许连你电脑上的服务。请双击打开桌面上的「商业运营AI工作台.html」，在那个版本里填 Key 即可。</div>
     </div>
     <div class="ai-msg" id="aiMsg">
       <div class="msg bot"><div class="who">运营助理</div>左侧选一个工具，我可以解读当前页面的数据。也可以直接问下面的问题。</div>
@@ -1418,6 +1424,10 @@ function answer(q){
 const AI_LOCAL='http://127.0.0.1:8765';
 let AI_STATE={ok:false,configured:false,model:'glm-4.5'};
 async function checkAI(){
+  if(location.protocol!=='file:'){
+    AI_STATE={ok:false,configured:false,model:'glm-4.5',online:true};
+    updateAIMode();return AI_STATE;
+  }
   try{
     const r=await fetch(AI_LOCAL+'/api/status',{cache:'no-store'});
     const d=await r.json();
@@ -1431,11 +1441,16 @@ function updateAIMode(){
   const tag=$('#modelTag'),mode=$('#aiMode'),st=$('#aiStatus');
   if(tag)tag.style.display=on?'':'none';
   if(tag&&on)tag.textContent=AI_STATE.model;
-  if(mode)mode.textContent=on?('已连接 '+AI_STATE.model+' · 本机服务'):'本地演示模式 · 回答基于当前页数据';
+  if(mode)mode.textContent=AI_STATE.online?'本地演示模式 · 在线版请打开桌面文件接大模型':on?('已连接 '+AI_STATE.model+' · 本机服务'):'本地演示模式 · 回答基于当前页数据';
+  const box=$('#aiCfgBox'),ot=$('#aiOnlineTip');
+  if(box)box.style.display=AI_STATE.online?'none':'';
+  if(ot)ot.style.display=AI_STATE.online?'':'none';
   if(st){
     st.className='status-line'+(on?' on':'');
-    st.textContent=on?('本机服务已连接 · '+AI_STATE.model):
-      (AI_STATE.ok?'本机服务已启动，还没填 Key，当前用演示回答':'没检测到本机服务，当前用演示回答');
+    st.textContent=
+      AI_STATE.online?'官网在线版连不到你电脑的服务。要接大模型，请双击打开桌面上的「商业运营AI工作台.html」，再点重新检测。':
+      on?('本机服务已连接 · '+AI_STATE.model):
+      AI_STATE.ok?'本机服务已启动，还没填 Key，当前用演示回答':'没检测到本机服务，当前用演示回答';
   }
 }
 function pageContext(){
@@ -1490,8 +1505,19 @@ $('#aiGear').onclick=()=>{
   box.classList.toggle('open');
   if(box.classList.contains('open'))checkAI();
 };
-$('#aiOpenSetup').onclick=()=>window.open(AI_LOCAL+'/','_blank');
-$('#aiRefresh').onclick=()=>{checkAI().then(()=>toastDemo(AI_STATE.ok&&AI_STATE.configured?'本机服务已连接':'还没检测到可用的本机服务'));};
+async function aiSaveCfg(){
+  const key=$('#aiKey').value.trim(),model=$('#aiModel').value.trim()||'glm-4.5';
+  if(!key){toastDemo('先粘贴你的 Key 再保存');return;}
+  try{
+    const r=await fetch(AI_LOCAL+'/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:key,model:model})});
+    if(!r.ok)throw new Error();
+    $('#aiKey').value='';
+    await checkAI();
+    toastDemo(AI_STATE.configured?'已保存并连接，左上角出现绿色模型名就成功了':'已保存，点重新检测确认');
+  }catch(e){toastDemo('连不上本机服务，确认服务已启动后再试');}
+}
+if($('#aiSave'))$('#aiSave').onclick=aiSaveCfg;
+$('#aiRefresh').onclick=()=>{checkAI().then(()=>toastDemo(AI_STATE.online?'在线版连不到本机服务，请打开桌面文件':AI_STATE.ok&&AI_STATE.configured?'本机服务已连接':AI_STATE.ok?'服务已启动，还没填 Key':'还没检测到本机服务'));};
 $('#aiClose').onclick=()=>$('#aiSet').classList.remove('open');
 checkAI();
 $('#mtoggle').onclick=()=>$('#ai').classList.toggle('open');
