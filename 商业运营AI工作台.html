@@ -127,6 +127,16 @@ tr:last-child td{border-bottom:0}
 .saveState{font-size:11px;color:var(--muted);font-weight:400;margin-left:8px}
 td[data-bind="1"]{cursor:text}
 td.editing{outline:2px solid #0071e3;outline-offset:-2px;background:#f5f9ff}
+.tplbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.tplbar .inp{font-size:13px;padding:8px 11px}
+.varbar{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.varchip{border:0;background:#eef4ff;color:#0071e3;font:inherit;font-size:12px;padding:5px 10px;border-radius:8px;cursor:pointer;transition:background .2s}
+.varchip:hover{background:#dfeaff}
+.tplgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.tpledit{width:100%;min-height:430px;box-sizing:border-box;font:inherit;font-size:13px;line-height:1.75;padding:16px 18px;border:.5px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);resize:vertical;white-space:pre-wrap}
+.tpledit:focus{outline:2px solid #0071e3;outline-offset:-1px}
+#tplPreview{white-space:pre-wrap;min-height:430px}
+@media(max-width:900px){.tplgrid{grid-template-columns:1fr}.tpledit{min-height:300px}#tplPreview{min-height:auto}}
 .filebtn{position:relative;overflow:hidden;cursor:pointer;display:inline-flex;align-items:center}
 .filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .inp{font:inherit;font-size:13px;padding:9px 12px;border:.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
@@ -334,8 +344,10 @@ function exportDoc(id,name){
   dl(name||'文稿.txt',d.innerText.trim()+'\r\n\r\n（由商业运营工作台导出）');
 }
 function downloadLetters(){
-  const txt=COL_ROWS.map(r=>'催缴通知（'+(r.lit==='诉讼中'?'紧急':'常规')+'）\n\n致：'+r.m+'（'+r.p+'）\n费用类型：'+r.f+'\n应缴：'+money(r.gross)+'　减免：'+money(r.red)+'\n实欠：'+money(r.net)+'\n逾期：'+r.d+' 天\n建议：'+r.act+'\n\n2026 年 11 月 19 日\n商业运营管理部').join('\r\n\r\n'+'='.repeat(36)+'\r\n\r\n');
+  const tpls=getTemplates();
+  const txt=COL_ROWS.map(r=>renderLetter(isUrgent(r)?tpls.urgent:tpls.normal,r)).join('\r\n\r\n'+'='.repeat(36)+'\r\n\r\n');
   dl('催缴函全集-'+COL_ROWS.length+'封.txt',txt);
+  toastDemo('已按各自模板生成 '+COL_ROWS.length+' 封（紧急账龄走紧急模板）');
 }
 function downloadGenerated(kind){
   const map={
@@ -357,8 +369,76 @@ function progressCSV(){
   const bod=COL_ROWS.map(r=>[r.m,r.p,r.f,r.gross,r.red,r.net,r.d,r.s,r.rate,r.act,r.lit].map(csvCell).join(',')).join('\r\n');
   return '\ufeff'+head+'\r\n'+bod;
 }
+/* ===== 催费函：可编辑模板 + 变量替换 ===== */
+const DEFAULT_TPL={
+  urgent:'紧急催缴通知\n\n致：{商户}（{项目}）\n联系人：{联系人}　电话：{电话}\n\n贵方欠款金额较大、逾期时间较长，请于收到本函后 3 个工作日内缴清全部欠款。逾期未缴，我方将启动诉讼程序，由此产生的一切法律后果由贵方承担。\n\n费用类型：{费项}\n应缴金额：{应缴}\n减免金额：{减免}\n实欠金额：{实欠}\n逾期天数：{逾期} 天\n\n{日期}\n{落款}',
+  normal:'催缴提醒函\n\n致：{商户}（{项目}）\n联系人：{联系人}　电话：{电话}\n\n贵方尚有费用未缴，请于收到本函后 7 个工作日内缴清。如有疑问或已缴费，请及时与我部联系核对。感谢配合。\n\n费用类型：{费项}\n应缴金额：{应缴}\n减免金额：{减免}\n实欠金额：{实欠}\n逾期天数：{逾期} 天\n\n{日期}\n{落款}'
+};
+const TPL_VARS=['商户','项目','费项','联系人','电话','应缴','减免','实欠','逾期','日期','落款'];
+function getTemplates(){
+  const s=readStore();
+  return {urgent:(s.tpl&&s.tpl.urgent)||DEFAULT_TPL.urgent,normal:(s.tpl&&s.tpl.normal)||DEFAULT_TPL.normal};
+}
+function saveTemplates(tpl){
+  const s=readStore();s.tpl=tpl;
+  if(writeStore(s))toastDemo('模板已保存到本浏览器，刷新不丢');
+}
+function resetTemplate(){
+  if(!window.confirm('恢复两套默认模板？你改过的文案会被覆盖。'))return;
+  saveTemplates(DEFAULT_TPL);
+  $('#tplUrgent').value=DEFAULT_TPL.urgent;$('#tplNormal').value=DEFAULT_TPL.normal;
+  renderTplPreview();
+}
+function isUrgent(r){return r.lit==='诉讼中'||r.d>90;}
+function letterVars(r){
+  return {
+    '商户':r.m,'项目':r.p,'费项':r.f,
+    '联系人':r.contact||'商户负责人','电话':r.phone||'—',
+    '应缴':money(r.gross),'减免':money(r.red),'实欠':money(r.net),
+    '逾期':String(r.d),
+    '日期':new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'}),
+    '落款':'商业运营管理部'
+  };
+}
+function renderLetter(tpl,r){
+  const v=letterVars(r);
+  return String(tpl).replace(/\{(商户|项目|费项|联系人|电话|应缴|减免|实欠|逾期|日期|落款)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+}
+function curTplRow(){return COL_ROWS[Math.min(COL_ROWS.length-1,Math.max(0,parseInt($('#tplMerchant').value)||0))];}
+function renderTplPreview(){
+  const row=curTplRow();if(!row)return;
+  const tpl=$('#tplKind').value==='urgent'?$('#tplUrgent').value:$('#tplNormal').value;
+  $('#tplPreview').innerText=renderLetter(tpl,row);
+  $('#tplHint').textContent=(isUrgent(row)?'该商户账龄/诉讼状态 → 批量时用「紧急模板」':'该商户状态 → 批量时用「常规模板」');
+}
+function switchTplEditor(){
+  const k=$('#tplKind').value;
+  $('#tplUrgent').style.display=k==='urgent'?'block':'none';
+  $('#tplNormal').style.display=k==='normal'?'block':'none';
+  renderTplPreview();
+}
+function insertVar(name){
+  const ta=$('#tplKind').value==='urgent'?$('#tplUrgent'):$('#tplNormal');
+  const tok='{'+name+'}',p=ta.selectionStart;
+  ta.value=ta.value.slice(0,p)+tok+ta.value.slice(ta.selectionEnd);
+  ta.focus();ta.selectionStart=ta.selectionEnd=p+tok.length;
+  renderTplPreview();
+}
 function letterText(){
-  return '紧急催缴通知\r\n\r\n致：优衣库（天河城项目）\r\n联系人：陈店长　电话：139****2048\r\n\r\n贵方欠款金额较大、逾期时间较长，请于收到本函后 3 个工作日内缴清全部欠款。逾期未缴，我方将启动诉讼程序，由此产生的一切法律后果由贵方承担。\r\n\r\n费用类型：物业费\r\n应缴金额：¥76,200\r\n实欠金额：¥76,200\r\n逾期天数：120 天\r\n\r\n2026 年 11 月 19 日\r\n商业运营管理部';
+  const row=curTplRow();if(!row)return '';
+  const tpl=$('#tplKind').value==='urgent'?$('#tplUrgent').value:$('#tplNormal').value;
+  return renderLetter(tpl,row);
+}
+function initTpl(){
+  const t=getTemplates();
+  $('#tplUrgent').value=t.urgent;$('#tplNormal').value=t.normal;
+  const sel=$('#tplMerchant');
+  sel.innerHTML=COL_ROWS.map((r,i)=>'<option value="'+i+'">'+esc(r.m)+' · '+esc(r.f)+' · 逾期 '+r.d+' 天</option>').join('');
+  sel.value=Math.max(0,COL_ROWS.findIndex(r=>r.m==='优衣库'));
+  const onEdit=()=>{saveTemplates({urgent:$('#tplUrgent').value,normal:$('#tplNormal').value});renderTplPreview();};
+  $('#tplUrgent').addEventListener('input',onEdit);
+  $('#tplNormal').addEventListener('input',onEdit);
+  switchTplEditor();
 }
 function importCSV(id,input){
   const f=input.files&&input.files[0];if(!f)return;
@@ -627,10 +707,26 @@ function pageLetter(){return head('增长与招商 / 催缴','催费函自动生
     {label:'整数连报',value:2,color:'#ff3b30'},{label:'节假日反常',value:1,color:'#ff9f0a'},
     {label:'异常波动',value:1,color:'#5e6ad2'}])+'</div>'+
 '</div></div>'+
-'<div class="card"><p class="sec-label">催费函预览 · 紧急模板</p>'+
-  '<div class="doc">紧急催缴通知\n\n致：优衣库（天河城项目）\n联系人：陈店长　电话：139****2048\n\n贵方欠款金额较大、逾期时间较长，请于收到本函后 3 个工作日内缴清全部欠款。逾期未缴，我方将启动诉讼程序，由此产生的一切法律后果由贵方承担。\n\n费用类型：物业费\n应缴金额：¥76,200\n实欠金额：¥76,200\n逾期天数：120 天\n\n2026 年 11 月 19 日\n商业运营管理部</div>'+
-  '<div class="actions" style="margin-top:14px"><button class="btn primary" onclick="dl(\'紧急催缴通知_优衣库.txt\',letterText(),\'text/plain;charset=utf-8\')">下载这封</button>'+
-  '<button class="btn" onclick="downloadLetters()">批量生成全部</button></div></div>'+
+'<div class="card"><p class="sec-label">催费函模板 · 可自己改（改完自动保存）</p>'+
+  '<div class="tplbar">'+
+    '<select class="inp" id="tplKind" onchange="switchTplEditor()"><option value="urgent">紧急模板 · 账龄>90天/诉讼中</option><option value="normal">常规模板 · 提醒</option></select>'+
+    '<select class="inp" id="tplMerchant" onchange="renderTplPreview()"></select>'+
+    '<button class="btn btn-s" onclick="resetTemplate()">恢复默认</button>'+
+  '</div>'+
+  '<p class="hint" style="margin:10px 0 6px">点下面的变量插到光标处，方括号内容会自动替换成该商户的真实数据：</p>'+
+  '<div class="varbar">'+TPL_VARS.map(v=>'<button class="varchip" onclick="insertVar(\''+v+'\')">{'+v+'}</button>').join('')+'</div>'+
+  '<div class="tplgrid">'+
+    '<div><div class="ct" style="margin-bottom:6px">编辑模板文案</div>'+
+      '<textarea id="tplUrgent" class="tpledit" spellcheck="false"></textarea>'+
+      '<textarea id="tplNormal" class="tpledit" spellcheck="false" style="display:none"></textarea></div>'+
+    '<div><div class="ct" style="margin-bottom:6px">实时预览 <span id="tplHint" class="saveState"></span></div>'+
+      '<div class="doc" id="tplPreview"></div></div>'+
+  '</div>'+
+  '<div class="actions" style="margin-top:14px">'+
+    '<button class="btn primary" onclick="dl(\'催缴函_\'+curTplRow().m+\'.txt\',letterText(),\'text/plain;charset=utf-8\')">下载这封</button>'+
+    '<button class="btn" onclick="downloadLetters()">批量生成全部</button>'+
+    '<span class="hint">批量时：诉讼中或账龄超 90 天用紧急模板，其余用常规模板</span>'+
+  '</div></div>'+
 '<div class="card"><p class="sec-label">营业额核验疑点</p>'+tableHTML([
   {m:'星巴克',d:'44.3%',a:'整数连报',s:'高'},{m:'海底捞',d:'29.1%',a:'节假日反常',s:'高'},
   {m:'耐克专柜',d:'22.1%',a:'异常波动',s:'中'},{m:'屈臣氏',d:'16.8%',a:'整数连报',s:'中'}
@@ -1020,6 +1116,7 @@ $('#main').innerHTML=PAGES.map(p=>'<section class="page" id="page-'+p.id+'">'+
 buildNav();
 const restored=restoreTables();
 makeEditable();
+initTpl();
 go('today');
 if(restored)toastDemo('已恢复本浏览器保存的 '+restored+' 页数据');
 </script>
