@@ -120,6 +120,13 @@ tr:last-child td{border-bottom:0}
 .btn:active{transform:scale(.97)}
 .btn.primary{background:var(--blue);color:#fff}
 .btn.primary:hover{background:#0067d0}
+.btn-s{padding:5px 11px;font-size:12px;border-radius:8px;background:#eef4ff;color:#0071e3}
+.btn-s:hover{background:#dfeaff}
+.actions.sub{margin-top:10px}
+.actions.sub .hint{font-size:12px;margin-left:2px}
+.saveState{font-size:11px;color:var(--muted);font-weight:400;margin-left:8px}
+td[data-bind="1"]{cursor:text}
+td.editing{outline:2px solid #0071e3;outline-offset:-2px;background:#f5f9ff}
 .filebtn{position:relative;overflow:hidden;cursor:pointer;display:inline-flex;align-items:center}
 .filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .inp{font:inherit;font-size:13px;padding:9px 12px;border:.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
@@ -254,7 +261,7 @@ function barChart(items,opt={}){
   });
   return s+'</svg>';
 }
-function donutChart(items){
+function donutChart(items,opt={}){
   const total=items.reduce((a,b)=>a+Math.max(0,b.value),0);
   if(!total)return '<div class="hint">暂无数据</div>';
   const R=52,C=2*Math.PI*R;let acc=0;
@@ -265,9 +272,9 @@ function donutChart(items){
     s+='<circle r="'+R+'" fill="none" stroke="'+(it.color||PAL[i%PAL.length])+'" stroke-width="19" stroke-dasharray="'+len+' '+(C-len)+'" stroke-dashoffset="'+(-acc)+'" transform="rotate(-90)"/>';
     acc+=len;
   });
-  s+='<text x="0" y="2" text-anchor="middle" font-size="20" font-weight="600" fill="#1d1d1f">'+total+'</text>';
+  s+='<text x="0" y="2" text-anchor="middle" font-size="20" font-weight="600" fill="#1d1d1f">'+esc(opt.format?opt.format(total):total)+'</text>';
   s+='<text x="0" y="18" text-anchor="middle" font-size="10" fill="#86868b">合计</text></g>';
-  items.forEach((it,i)=>{const y=34+i*25;s+='<rect x="158" y="'+(y-8)+'" width="9" height="9" rx="2.5" fill="'+(it.color||PAL[i%PAL.length])+'"/><text x="175" y="'+y+'" font-size="12" fill="#1d1d1f">'+esc(it.label)+'</text><text x="352" y="'+y+'" font-size="12" text-anchor="end" fill="#6e6e73">'+it.value+'</text>';});
+  items.forEach((it,i)=>{const y=34+i*25;s+='<rect x="158" y="'+(y-8)+'" width="9" height="9" rx="2.5" fill="'+(it.color||PAL[i%PAL.length])+'"/><text x="175" y="'+y+'" font-size="12" fill="#1d1d1f">'+esc(it.label)+'</text><text x="352" y="'+y+'" font-size="12" text-anchor="end" fill="#6e6e73">'+esc(opt.format?opt.format(it.value):it.value)+'</text>';});
   return s+'</svg>';
 }
 function lineChart(points){
@@ -368,7 +375,86 @@ function importCSV(id,input){
     const wrap=document.querySelector('#page-'+id+' .tablewrap');
     if(!wrap){toastDemo('本页没有可替换的明细表');input.value='';return;}
     wrap.innerHTML='<table><thead><tr>'+hd.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+hd.map((_,i)=>'<td>'+esc(row[i]||'')+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
-    toastDemo('已导入 '+rows.length+' 行，替换本页明细表（图表仍为演示数据）');
+    wrap.dataset.custom='1';
+    if(typeof saveTables==='function')saveTables();
+    if(typeof makeEditable==='function')makeEditable();
+    toastDemo('已导入 '+rows.length+' 行并保存到本浏览器，刷新不丢');
+    input.value='';
+  };
+  r.readAsText(f,'UTF-8');
+}
+
+/* ===== 数据持久化：改动即存本浏览器，刷新不丢 ===== */
+const STORE_KEY='xunke_wb_data_v1';
+function readStore(){
+  try{return JSON.parse(localStorage.getItem(STORE_KEY)||'{}');}catch(e){return {};}
+}
+function writeStore(s){
+  try{localStorage.setItem(STORE_KEY,JSON.stringify(s));return true;}
+  catch(e){toastDemo('本地保存失败：'+e.message);return false;}
+}
+function saveTables(){
+  const s=readStore();s.tables=s.tables||{};
+  PAGES.forEach(p=>{
+    const w=document.querySelector('#page-'+p.id+' .tablewrap');
+    if(w&&w.dataset.custom==='1')s.tables[p.id]=w.innerHTML;
+  });
+  s.ts=Date.now();
+  if(writeStore(s)){
+    const stamp='已保存 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    document.querySelectorAll('.saveState').forEach(el=>el.textContent=stamp);
+  }
+}
+function restoreTables(){
+  const s=readStore();
+  Object.entries(s.tables||{}).forEach(([id,html])=>{
+    const w=document.querySelector('#page-'+id+' .tablewrap');
+    if(w){w.innerHTML=html;w.dataset.custom='1';}
+  });
+  return Object.keys(s.tables||{}).length;
+}
+function makeEditable(){
+  document.querySelectorAll('.tablewrap td').forEach(td=>{
+    if(td.dataset.bind==='1')return;
+    td.dataset.bind='1';td.title='双击编辑，改完自动保存';
+    td.addEventListener('dblclick',()=>{
+      if(td.isContentEditable)return;
+      td.contentEditable='true';td.classList.add('editing');td.focus();
+      const sel=window.getSelection(),range=document.createRange();
+      range.selectNodeContents(td);sel.removeAllRanges();sel.addRange(range);
+    });
+    td.addEventListener('blur',()=>{
+      if(!td.isContentEditable)return;
+      td.contentEditable='false';td.classList.remove('editing');
+      const w=td.closest('.tablewrap');
+      if(w){w.dataset.custom='1';saveTables();}
+    });
+  });
+}
+function resetDemo(){
+  if(!window.confirm('恢复演示数据？会清掉本浏览器里导入和编辑过的内容。'))return;
+  localStorage.removeItem(STORE_KEY);
+  location.reload();
+}
+
+/* ===== 整包备份 / 恢复 ===== */
+function exportBackup(){
+  const payload={app:'商业运营AI工作台',version:1,exportedAt:new Date().toISOString(),data:readStore()};
+  dl('工作台整包备份-'+new Date().toISOString().slice(0,10)+'.json',
+     JSON.stringify(payload,null,2),'application/json;charset=utf-8');
+  toastDemo('整包备份已下载，可存U盘或发同事');
+}
+function importBackup(input){
+  const f=input.files&&input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const o=JSON.parse(String(r.result).replace(/^\ufeff/,''));
+      if(!o||!o.data||typeof o.data!=='object')throw new Error('不是本工作台的备份文件');
+      localStorage.setItem(STORE_KEY,JSON.stringify(o.data));
+      toastDemo('备份已恢复，正在刷新…');
+      setTimeout(()=>location.reload(),600);
+    }catch(e){toastDemo('恢复失败：'+e.message);}
     input.value='';
   };
   r.readAsText(f,'UTF-8');
@@ -728,8 +814,63 @@ function pageExperts(){return head('团队 / 职责','商业地产 AI 运营专�
   {a:'决策机制',b:'日常由对应专家判定；跨模块与重大事项由总负责人汇总后决策'}
 ],[{key:'a',label:'机制'},{key:'b',label:'说明'}])+'</div>';}
 
+/* ===== 首页：今日待办（跨页优先序，按金额排） ===== */
+const TODOS=[
+  {page:'validator',src:'营业额核验',t:'商户 M001 · 营业额缺口',amt:182400,kind:'对账缺口',lv:'高',days:'重点日 10-08',why:'整数连报 82% + 重点日缺口',act:'核对 POS 小票与银行到账'},
+  {page:'collection',src:'欠费催收',t:'星巴克 · 广州塔 · 租金',amt:118600,kind:'净欠费',lv:'高',days:'逾期 96 天',why:'金额最大，已进入诉讼',act:'立即催收，备诉讼材料'},
+  {page:'validator',src:'营业额核验',t:'商户 M003 · 营业额缺口',amt:78000,kind:'对账缺口',lv:'高',days:'重点日 10-02',why:'节假日营业额异常偏高',act:'核对该日流水来源'},
+  {page:'collection',src:'欠费催收',t:'优衣库 · 天河城 · 物业费',amt:76200,kind:'净欠费',lv:'高',days:'逾期 120 天',why:'账龄最长，诉讼中',act:'走法律程序，留送达凭证'},
+  {page:'collection',src:'欠费催收',t:'海底捞 · 珠江新城 · 推广费',amt:60000,kind:'净欠费',lv:'高',days:'逾期 78 天',why:'高风险未缴',act:'立即催收'},
+  {page:'collection',src:'欠费催收',t:'耐克专柜 · 番禺万达 · 租金',amt:52000,kind:'净欠费',lv:'中',days:'逾期 64 天',why:'中风险跟进',act:'重点催收，密切跟进'},
+  {page:'validator',src:'营业额核验',t:'商户 M004 · 营业额缺口',amt:43000,kind:'对账缺口',lv:'高',days:'重点日 10-15',why:'日营业额异常波动',act:'抽查当日明细'},
+  {page:'collection',src:'欠费催收',t:'屈臣氏 · 海珠广场 · 水电费',amt:30000,kind:'净欠费',lv:'中',days:'逾期 45 天',why:'中风险跟进',act:'重点催收'}
+];
+const URGENT=[
+  {page:'lease',src:'招商合同',t:'周大福续约',left:'18 天',lv:'紧急',why:'30 天内到期，谈判中',act:'立即启动续约谈判'},
+  {page:'security',src:'安防管理',t:'东门摄像头离线',left:'6 小时',lv:'高',why:'入口监控盲区，处理中',act:'现场核查并恢复'},
+  {page:'property',src:'工程物业',t:'中央空调主机',left:'87% 故障风险',lv:'高',why:'B1 机房，风险最高',act:'本周安排检修'}
+];
+function pageToday(){
+  const sorted=[...TODOS].sort((a,b)=>b.amt-a.amt);
+  const total=sorted.reduce((s,x)=>s+x.amt,0);
+  const high=sorted.filter(x=>x.lv==='高').length;
+  const bySrc={};sorted.forEach(x=>bySrc[x.src]=(bySrc[x.src]||0)+x.amt);
+  const srcColor={'营业额核验':'#0071e3','欠费催收':'#ff3b30'};
+  return head('总览 / 今日优先','今日待办','把各工具里的高风险项拉到一起，按涉及金额从大到小排。点「去处理」直接跳到对应工具。',true)+
+  '<div class="card"><p class="sec-label">今日概览</p><div class="kpis">'+
+    kpi('待处理事项',sorted.length+URGENT.length,'条，含 '+URGENT.length+' 条时间紧急','blue')+
+    kpi('涉及金额',money(total),'对账缺口 + 净欠费','red')+
+    kpi('高风险',high,'条按金额优先处理','orange')+
+    kpi('覆盖工具',new Set([...TODOS,...URGENT].map(x=>x.src)).size,'个工具的数据汇总','purple')+
+  '</div></div>'+
+  '<div class="card"><p class="sec-label">风险来源与金额分布</p><div class="charts">'+
+    '<div class="chartbox"><div class="ct">涉及金额来源</div>'+donutChart(
+      Object.entries(bySrc).map(([k,v])=>({label:k,value:v,color:srcColor[k]||'#5e6ad2'})),{format:v=>money(v)})+'</div>'+
+    '<div class="chartbox"><div class="ct">金额 Top 6（元）</div>'+barChart(
+      sorted.slice(0,6).map(x=>({label:x.t.split(' · ')[0],value:x.amt,color:x.src==='欠费催收'?'#ff3b30':'#0071e3'})),
+      {format:v=>money(v),labelW:70})+'</div>'+
+  '</div></div>'+
+  '<div class="card"><p class="sec-label">今日处理顺序 · 按涉及金额从大到小</p>'+tableHTML(sorted,[
+    {key:'i',label:'#',fmt:(v,r)=>String(sorted.indexOf(r)+1)},
+    {key:'t',label:'待办事项',fmt:(v,r)=>'<div style="white-space:normal;min-width:170px"><b>'+esc(v)+'</b><div style="font-size:11px;color:var(--muted);margin-top:3px">'+esc(r.act)+' · '+esc(r.kind)+'</div></div>'},
+    {key:'src',label:'来源'},
+    {key:'amt',label:'涉及金额',fmt:v=>money(v)},
+    {key:'lv',label:'风险',tag:r=>r.lv==='高'?'red':r.lv==='中'?'orange':'green'},
+    {key:'days',label:'账龄 / 重点日'},
+    {key:'go',label:'',fmt:(v,r)=>'<button class="btn btn-s" onclick="go(\''+r.page+'\')">去处理</button>'}
+  ])+'</div>'+
+  '<div class="card"><p class="sec-label">时间紧急 · 不按金额排，先处理</p>'+tableHTML(URGENT,[
+    {key:'t',label:'事项',fmt:(v,r)=>'<div style="white-space:normal;min-width:170px"><b>'+esc(v)+'</b><div style="font-size:11px;color:var(--muted);margin-top:3px">'+esc(r.why)+' · '+esc(r.act)+'</div></div>'},
+    {key:'src',label:'来源'},
+    {key:'left',label:'倒计时',tag:r=>r.lv==='紧急'?'red':'orange'},
+    {key:'lv',label:'级别',tag:r=>r.lv==='紧急'?'red':'orange'},
+    {key:'go',label:'',fmt:(v,r)=>'<button class="btn btn-s" onclick="go(\''+r.page+'\')">去处理</button>'}
+  ])+'</div>';
+}
+
 /* ===== 渲染器映射（页面 HTML 在最后统一注入） ===== */
 const RENDER={
+  today:pageToday,
   validator:pageValidator,collection:pageCollection,report:pageReport,events:pageEvents,
   letter:pageLetter,lease:pageLease,property:pageProperty,security:pageSecurity
 };
@@ -751,6 +892,7 @@ function toastDemo(msg){
 <script>
 /* ===== 应用：菜单与路由 ===== */
 const ICON={
+  today:'<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>',
   validator:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
   collection:'<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h4"/>',
   report:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
@@ -762,6 +904,7 @@ const ICON={
   experts:'<path d="M12 3l8 4v6c0 4.4-3.2 7.6-8 9-4.8-1.4-8-4.6-8-9V7z"/><path d="M9 12l2 2 4-4"/>'
 };
 const PAGES=[
+  {id:'today',name:'今日待办',group:'总览',icon:'today'},
   {id:'validator',name:'营业额核验',group:'营运管理',icon:'validator'},
   {id:'collection',name:'欠费催收分级',group:'营运管理',icon:'collection'},
   {id:'report',name:'经营汇报',group:'营运管理',icon:'report'},
@@ -803,6 +946,13 @@ function answerRaw(q){
   const d=DEMO[id]||{};
   const ex=expertOf(id);
   const pre='';
+  if(id==='today'){
+    if(/先做|优先|哪个|紧急|今天/.test(q))
+      return '今天先处理时间紧急的 3 件：周大福续约（18 天）、东门摄像头离线（6 小时）、中央空调故障风险 87%。按金额看，最大的是商户 M001 的对账缺口 ¥182,400。点每行的「去处理」能直接跳到对应工具。';
+    if(/总结|概览|多少|数据|情况/.test(q))
+      return '今日待办共 '+TODOS.length+' 条按金额排序，涉及金额约 '+money(TODOS.reduce((s,x)=>s+x.amt,0))+'，其中高风险 '+TODOS.filter(x=>x.lv==='高').length+' 条；另有 '+URGENT.length+' 条时间紧急事项。';
+    return '这是跨工具的今日待办：上面按金额排，下面按紧急程度排。你可以问我「先做哪个」或「总结数据」。';
+  }
   if(id==='experts'){
     if(/谁|职责|分工|专家|团队/.test(q))return pre+'团队共 6 位专家：总负责人统筹战略；营运管核验与催费；企划管活动与汇报；招商管合同与线索；工程物业管运维；安防管监控与应急。每位卡片下方可直接跳到对应工具。';
     return pre+'这里展示 6 位专家的职责、能力和负责工具。点专家卡片下方的工具按钮，可以直接进入对应页面。';
@@ -850,19 +1000,28 @@ const DEMO={
 
 /* 数据条：每页统一的导入/导出入口 */
 function dataBar(id){
-  return '<div class="card"><p class="sec-label">数据导入 / 导出 · 本地文件</p>'+
+  return '<div class="card"><p class="sec-label">数据导入 / 导出 · 本地文件 <span class="saveState"></span></p>'+
     '<div class="actions">'+
       '<label class="btn filebtn">导入 CSV<input type="file" accept=".csv,text/csv" onchange="importCSV(\''+id+'\',this)"></label>'+
       '<button class="btn" onclick="exportPage(\''+id+'\')">导出本页数据</button>'+
       '<button class="btn" onclick="exportAll()">导出全部</button>'+
-      '<span class="hint">导入会替换本页第一张明细表；导出为 CSV，Excel 可直接打开</span>'+
+      '<button class="btn" onclick="exportBackup()">整包备份</button>'+
+    '</div>'+
+    '<div class="actions sub">'+
+      '<label class="btn btn-s filebtn">恢复备份<input type="file" accept=".json,application/json" onchange="importBackup(this)"></label>'+
+      '<button class="btn btn-s" onclick="resetDemo()">恢复演示数据</button>'+
+      '<span class="hint">双击表格单元格可直接改，改动自动存本浏览器；导出为 CSV，Excel 可打开</span>'+
     '</div></div>';
 }
 
-/* 启动：先注入页面 HTML，再建菜单 */
+/* 启动：先注入页面 HTML，再建菜单，最后恢复本浏览器保存的数据 */
 $('#main').innerHTML=PAGES.map(p=>'<section class="page" id="page-'+p.id+'">'+
   (p.id==='experts'?pageExperts():(expertStrip(p.id)+RENDER[p.id]()))+dataBar(p.id)+'</section>').join('');
-buildNav();go('validator');
+buildNav();
+const restored=restoreTables();
+makeEditable();
+go('today');
+if(restored)toastDemo('已恢复本浏览器保存的 '+restored+' 页数据');
 </script>
 </body>
 </html>
