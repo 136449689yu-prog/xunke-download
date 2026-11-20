@@ -73,10 +73,16 @@ input[type=file]{display:none}
 .hint{font-size:12px;color:var(--muted);margin-top:10px}
 /* stats */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:20px}
-.stat{background:var(--parch);border-radius:12px;padding:14px 16px}
+.stat{background:var(--parch);border-radius:12px;padding:14px 16px;transition:background .2s,box-shadow .2s}
+.stat.clickable{cursor:pointer}
+.stat.clickable:hover{background:#ebebef}
+.stat.sel{background:#e8f1ff;box-shadow:inset 0 0 0 1px var(--blue)}
 .stat .v{font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
 .stat .l{font-size:12px;color:var(--muted);margin-top:4px}
 .stat.warn .v{color:var(--red)}
+.stat.sel .l{color:var(--blue)}
+.focus-tip{font-size:12px;color:var(--muted);margin-top:12px;min-height:16px}
+.focus-tip b{color:var(--blue);font-weight:600}
 /* finding list */
 .findings{list-style:none;padding:0;margin:0}
 .findings li{padding:12px 0;border-bottom:1px solid var(--soft);font-size:14px;display:flex;gap:12px;align-items:flex-start}
@@ -140,10 +146,10 @@ footer{background:var(--parch);padding:40px 24px;color:var(--muted);font-size:12
 </div></nav>
 
 <header class="hero" id="top"><div class="wrap">
-  <p class="eyebrow">数据治理 · 五阶段受控清洗</p>
-  <h1>任何台账，清洗有章法</h1>
-  <p class="lead">检查、方案、审查、执行、验证——五步走完，每一步都由你确认。不篡改原值，数据只在本机处理。</p>
-  <p class="fine">支持 CSV / Excel · 无需联网 · 原始文件只读不改</p>
+  <p class="eyebrow">五步清洗，一步一确认</p>
+  <h1>杂乱表格，一步步理干净</h1>
+  <p class="lead">先检查，再定方案，审查后执行，最后验证。五步走完，每一步都要你点头。原始文件不动，改过的都在新表里。</p>
+  <p class="fine">支持 CSV / Excel · 表头自动识别 · 结果可逐条复核</p>
 </div></header>
 
 <div class="stepbar"><div class="wrap" id="stepbar"></div></div>
@@ -152,16 +158,17 @@ footer{background:var(--parch);padding:40px 24px;color:var(--muted);font-size:12
 
 <!-- 阶段1 -->
 <section class="stage show" id="stage1">
-  <div class="stage-head"><div class="tag">阶段 1 / 5</div><h2>只读检查原始数据</h2>
-    <p>上传文件，先看清数据什么样：表头、行数、缺失、重复、异常和敏感列。这一步只读，不动任何数据。</p></div>
+  <div class="stage-head"><div class="tag">阶段 1 / 5</div><h2>先看清数据</h2>
+    <p>上传文件，先看数据长什么样——表头、行数、缺失、重复、异常、敏感列。这一步只看不改。</p></div>
   <div class="card">
     <div class="drop" id="drop" onclick="document.getElementById('file').click()">
       <div>点击或拖入数据文件（<b>.xlsx</b> / <b>.csv</b>）</div>
-      <small>自动识别多张工作表、表头、合并单元格；Excel 解析库已内嵌，离线可用</small>
+      <small>自动识别多张工作表、表头、合并单元格；Excel 解析库已内置，打开即可使用</small>
       <input id="file" type="file" accept=".xlsx,.xls,.csv" onchange="onFile(this.files[0])"/>
     </div>
     <div id="s1result" class="hide">
       <div class="stats" id="s1stats"></div>
+      <div class="focus-tip" id="s1focustip">点上面的数字，可在下方表格里定位对应的问题；再点一次取消。</div>
       <div class="tablebox" style="margin-top:20px" id="s1preview"></div>
       <h4 style="margin-top:24px">检查发现</h4>
       <ul class="findings" id="s1findings"></ul>
@@ -173,7 +180,7 @@ footer{background:var(--parch);padding:40px 24px;color:var(--muted);font-size:12
 <!-- 阶段2 -->
 <section class="stage" id="stage2">
   <div class="stage-head"><div class="tag">阶段 2 / 5</div><h2>生成清洗方案</h2>
-    <p>按检查结果列出清洗规则。逐条勾选要执行的规则，确认后生成方案。默认只标注、不改值。</p></div>
+    <p>按检查结果列出清洗规则，逐条勾选要执行的。默认只标注、不改值。</p></div>
   <div class="card"><h3>规则清单</h3><div id="rulelist"></div>
     <p class="hint">删除、去重、填充属于破坏性操作，默认关闭；开启前请确认。</p>
   </div>
@@ -183,9 +190,9 @@ footer{background:var(--parch);padding:40px 24px;color:var(--muted);font-size:12
 <!-- 阶段3 -->
 <section class="stage" id="stage3">
   <div class="stage-head"><div class="tag">阶段 3 / 5</div><h2>审查清洗逻辑</h2>
-    <p>下面是本次将执行的清洗步骤，来自你确认的规则。审查无误后授权执行；有权退回方案修改。</p></div>
+    <p>下面是按你确认的规则整理的执行步骤。看一遍，没问题就授权执行；想改可以退回去。</p></div>
   <div class="card"><h3>将执行的操作</h3><pre class="code" id="codeview"></pre></div>
-  <div class="card tint"><h4>授权确认</h4><p style="font-size:14px;margin:0">执行只会生成新文件，原始文件保持不变。确认后进入执行阶段。</p></div>
+  <div class="card tint"><h4>授权确认</h4><p style="font-size:14px;margin:0">执行只生成新文件，不动原始文件。确认后开始。</p></div>
   <div class="row"><button class="btn plain" onclick="go(2)">← 返回方案</button><button class="btn" onclick="execute()">授权执行清洗 →</button></div>
 </section>
 
@@ -210,8 +217,8 @@ footer{background:var(--parch);padding:40px 24px;color:var(--muted);font-size:12
 
 <!-- 阶段5 -->
 <section class="stage" id="stage5">
-  <div class="stage-head"><div class="tag">阶段 5 / 5</div><h2>只读验证清洗结果</h2>
-    <p>对比原始数据与清洗结果，逐条规则给出通过、部分通过或失败结论。验证阶段只检查，不改数据。</p></div>
+  <div class="stage-head"><div class="tag">阶段 5 / 5</div><h2>验证清洗结果</h2>
+    <p>对照原始数据逐条验收，每条规则给出通过或失败。这一步只看不改。</p></div>
   <div class="card"><h3>逐规则验证</h3><div id="verifyrows"></div>
     <div class="card tint" style="margin-top:20px"><h4>总体结论</h4><div id="verdict" style="font-size:17px;font-weight:600"></div></div>
   </div>
@@ -219,7 +226,7 @@ footer{background:var(--parch);padding:40px 24px;color:var(--muted);font-size:12
 </section>
 
 </div></main>
-<footer>通用数据清洗台 · 五阶段受控流程 · 所有数据仅在本机处理，不上传 · 重要决策请人工复核</footer>
+<footer>通用数据清洗台 · 五阶段受控流程 · 按规则自动清洗，结果可复核 · 重要决策请人工复核</footer>
 <div id="toast"></div>
 
 <script>
@@ -227,7 +234,7 @@ footer{background:var(--parch);padding:40px 24px;color:var(--muted);font-size:12
 let S={headers:[],data:[],types:[],mainName:'',sheets:[],findings:[],rules:[],clean:null,report:null,stage:1,meta:{}};
 
 /* ============ 步骤条 ============ */
-const STEP_NAMES=['只读检查','生成方案','审查逻辑','执行清洗','验证结果'];
+const STEP_NAMES=['先看数据','生成方案','审查逻辑','执行清洗','验证结果'];
 function renderSteps(){
   const b=document.getElementById('stepbar');
   b.innerHTML=STEP_NAMES.map((n,i)=>{const k=i+1;const cls=k===S.stage?'active':(k<S.stage?'done':'');
@@ -273,18 +280,27 @@ function expandMerges(aoa,merges){
 function parseAOA(aoa,merges){
   if(!aoa||!aoa.length){S.headers=[];S.data=[];return;}
   if(merges&&merges.length)expandMerges(aoa,merges);
-  // 表头：取第一行非空且文本占多的一行
-  let hi=0,best=-1;
-  for(let i=0;i<Math.min(5,aoa.length);i++){
-    const cells=(aoa[i]||[]).map(String);
-    const txt=cells.filter(c=>c.trim()&&!/^\d+(\.\d+)?$/.test(c.trim())).length;
-    if(txt>best){best=txt;hi=i;}
-  }
   const maxC=Math.max(...aoa.map(r=>(r&&r.length)||0),0);
+  // 表头：从顶部起连续多行"以文本为主且填充率高"的行都算表头，取最后一行
+  const isHdrRow=(row)=>{
+    const cells=(row||[]).map(String);
+    const filled=cells.filter(c=>c.trim()!=='').length;
+    if(!filled)return false;
+    const text=cells.filter(c=>c.trim()&&!/^\d+(\.\d+)?$/.test(c.trim())).length;
+    return text/filled>=0.7 && filled/maxC>=0.5;
+  };
+  let hi=0;
+  for(let i=0;i<Math.min(10,aoa.length);i++){
+    if(isHdrRow(aoa[i]))hi=i;
+    else if(i>0)break;
+  }
   const hdr=[];
   for(let c=0;c<maxC;c++){
-    let name='';for(let r=0;r<=hi;r++){const v=(aoa[r]&&aoa[r][c]!=null)?String(aoa[r][c]).trim():'';if(v)name=v;}
-    name=name.replace(/\s+/g,' ').trim();hdr.push(name||('列'+(c+1)));
+    const parts=[];for(let r=0;r<=hi;r++){
+      const v=(aoa[r]&&aoa[r][c]!=null)?String(aoa[r][c]).trim():'';
+      if(v&&parts.indexOf(v)<0)parts.push(v);
+    }
+    hdr.push(parts.join(' ').replace(/\s+/g,' ').trim()||('列'+(c+1)));
   }
   S.headers=hdr;
   S.data=aoa.slice(hi+1).filter(r=>r&&r.some(c=>String(c==null?'':c).trim()!==''))
@@ -331,6 +347,15 @@ function inspect(){
   let dateRev=0;const si=H.findIndex(h=>/起|开始|start/i.test(h)),ei=H.findIndex(h=>/止|结束|end/i.test(h));
   if(si>=0&&ei>=0)D.forEach((r,ri)=>{const a=parseFloat(r[si]),b=parseFloat(r[ei]);if(!isNaN(a)&&!isNaN(b)&&b<a){dateRev++;if(anomEx.length<3)anomEx.push(`第${ri+2}行结束早于开始`);}});
   if(anomaly+dateRev>0)findings.push({lv:'r',t:'异常值',d:`共 ${anomaly+dateRev} 处（占位文本、负数、日期倒挂）。${anomEx.length?'示例：'+anomEx.join('；'):''}`});
+  // 记录问题坐标，供统计卡点选高亮
+  const missAt=[],anomAt=[],dupAt=[];
+  D.forEach((r,ri)=>H.forEach((h,i)=>{
+    const v=r[i];
+    if(v===''){missAt.push([ri,i]);return;}
+    if(PLACE.test(v)||(T[i]==='num'&&parseFloat(String(v).replace(/[元㎡%％,\s]/g,''))<0))anomAt.push([ri,i]);
+  }));
+  dupGroups.forEach(g=>g.forEach(i=>dupAt.push(i)));
+  S.at={miss:missAt,anom:anomAt,dup:dupAt};
   // 敏感列
   const sens=H.filter((h,i)=>/电话|手机|手机|身份证|账号|卡号|邮箱|姓名|地址/.test(h)).map((h,i)=>h);
   // 重建sens，带列号
@@ -345,25 +370,54 @@ function inspect(){
 function renderS1(){
   document.getElementById('s1result').classList.remove('hide');
   const m=S.meta;
-  document.getElementById('s1stats').innerHTML=
-    `<div class="stat"><div class="v">${m.rows}</div><div class="l">数据行</div></div>`+
-    `<div class="stat"><div class="v">${m.cols}</div><div class="l">字段列</div></div>`+
-    `<div class="stat warn"><div class="v">${m.missCells}</div><div class="l">缺失单元格</div></div>`+
-    `<div class="stat warn"><div class="v">${m.dupRows}</div><div class="l">重复行</div></div>`+
-    `<div class="stat warn"><div class="v">${m.anomaly}</div><div class="l">异常值</div></div>`;
+  const cards=[
+    {k:'rows',v:m.rows,l:'数据行',warn:false},
+    {k:'cols',v:m.cols,l:'字段列',warn:false},
+    {k:'miss',v:m.missCells,l:'缺失单元格',warn:true},
+    {k:'dup',v:m.dupRows,l:'重复行',warn:true},
+    {k:'anom',v:m.anomaly,l:'异常值',warn:true}
+  ];
+  document.getElementById('s1stats').innerHTML=cards.map(c=>
+    `<div class="stat clickable${c.warn?' warn':''}" data-k="${c.k}" onclick="focusStat('${c.k}')"><div class="v">${c.v}</div><div class="l">${c.l}</div></div>`).join('');
   const icons={r:'!',a:'·',g:'✓'};
   document.getElementById('s1findings').innerHTML=S.findings.map(f=>
     `<li><span class="ic ${f.lv}">${icons[f.lv]}</span><span class="tx"><b>${esc(f.t)}</b><br><span>${esc(f.d)}</span></span></li>`).join('');
-  document.getElementById('s1preview').innerHTML=previewTable(S.headers,S.data);
+  S.focus=null;
+  drawPreview();
   document.getElementById('s1next').disabled=false;
   S.cleanReady=true;
 }
-function previewTable(headers,data,colsByFlag){
-  let h='<table><thead><tr>'+headers.map(x=>`<th>${esc(x)}</th>`).join('')+'</tr></thead><tbody>';
-  data.slice(0,50).forEach(r=>{
-    h+='<tr>'+r.map((v,i)=>`<td>${esc(v)}</td>`).join('')+'</tr>';
+const FOCUS_TIP={rows:'数据行',cols:'字段列',miss:'缺失单元格',dup:'重复行',anom:'异常值'};
+const FOCUS_DESC={rows:'共 %v 行数据（不含表头）。',cols:'共 %v 列字段。',miss:'共 %v 处空单元格，下表已标红。',dup:'共 %v 行多余重复，下表整行标紫。',anom:'共 %v 处异常值，下表已标红。'};
+function focusStat(k){
+  S.focus=(S.focus===k)?null:k;
+  document.querySelectorAll('#s1stats .stat').forEach(el=>el.classList.toggle('sel',el.dataset.k===S.focus));
+  const tip=document.getElementById('s1focustip');
+  if(S.focus){
+    const v=S.meta[{rows:'rows',cols:'cols',miss:'missCells',dup:'dupRows',anom:'anomaly'}[k]];
+    tip.innerHTML=`正在查看<b>${FOCUS_TIP[k]}</b>：${FOCUS_DESC[k].replace('%v',v)}${['miss','dup','anom'].includes(k)?' 再点一次可取消。':''}`;
+  }else{
+    tip.innerHTML='点上面的数字，可在下方表格里定位对应的问题；再点一次取消。';
+  }
+  drawPreview();
+}
+function drawPreview(){
+  const f=S.focus,at=S.at;
+  let missSet=new Set(),anomSet=new Set();
+  if(f==='miss')at.miss.forEach(([r,c])=>missSet.add(r+','+c));
+  if(f==='anom')at.anom.forEach(([r,c])=>anomSet.add(r+','+c));
+  let h='<table><thead><tr>'+S.headers.map(x=>`<th>${esc(x)}</th>`).join('')+'</tr></thead><tbody>';
+  S.data.slice(0,50).forEach((r,ri)=>{
+    const dupRow=(f==='dup'&&at.dup.indexOf(ri)>=0);
+    h+='<tr>'+r.map((v,i)=>{
+      let cls='';
+      if(f==='miss'&&missSet.has(ri+','+i))cls=' class="bad"';
+      else if(f==='anom'&&anomSet.has(ri+','+i))cls=' class="bad"';
+      else if(dupRow)cls=' class="dup"';
+      return `<td${cls}>${esc(v)}</td>`;
+    }).join('')+'</tr>';
   });
-  return h+'</tbody></table>';
+  document.getElementById('s1preview').innerHTML=h+'</tbody></table>';
 }
 
 /* ============ 阶段2 规则 ============ */
